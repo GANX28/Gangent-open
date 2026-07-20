@@ -1,0 +1,1002 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gangent Memory Graph Viewer</title>
+  <style>
+    :root {
+      --bg: #0f1217;
+      --panel: #171c24;
+      --panel-2: #10151d;
+      --text: #e9edf5;
+      --muted: #9ca8bb;
+      --line: #2b3545;
+      --accent: #20d6bd;
+      --warn: #ffb84d;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, "Microsoft YaHei", "Segoe UI", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      grid-template-rows: 64px 1fr;
+      height: 100vh;
+    }
+
+    header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line);
+      background: #111720;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 760;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .toolbar {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    button,
+    .file-label {
+      border: 1px solid #334155;
+      background: #1d2633;
+      color: var(--text);
+      border-radius: 7px;
+      height: 36px;
+      padding: 0 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    button:hover,
+    .file-label:hover {
+      border-color: var(--accent);
+    }
+
+    .small-btn {
+      height: 30px;
+      padding: 0 9px;
+      font-size: 12px;
+    }
+
+    input[type="file"] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .graph-wrap {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      background: radial-gradient(circle at center, #151d28 0%, #0f1217 68%);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+
+    canvas.dragging {
+      cursor: grabbing;
+    }
+
+    aside {
+      border-left: 1px solid var(--line);
+      background: var(--panel);
+      overflow: auto;
+    }
+
+    .side-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .side-section h2 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: #cbd5e1;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .search {
+      width: 100%;
+      height: 38px;
+      border-radius: 7px;
+      border: 1px solid #334155;
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 0 10px;
+      outline: none;
+    }
+
+    .search:focus {
+      border-color: var(--accent);
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .detail-title {
+      font-size: 18px;
+      font-weight: 760;
+      margin: 0 0 8px;
+      line-height: 1.25;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 12px 0;
+    }
+
+    .pill {
+      border: 1px solid #334155;
+      background: #111827;
+      border-radius: 999px;
+      padding: 4px 8px;
+      color: #cbd5e1;
+      font-size: 12px;
+    }
+
+    .body-text {
+      color: #d7deea;
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .summary-text {
+      color: #e2e8f0;
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .muted-line {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+      margin-top: 8px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #111827;
+    }
+
+    .stat b {
+      display: block;
+      font-size: 17px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .hint {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      color: #a6b2c3;
+      background: rgba(15, 18, 23, .72);
+      border: 1px solid rgba(148, 163, 184, .2);
+      border-radius: 8px;
+      padding: 9px 11px;
+      font-size: 12px;
+      pointer-events: none;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: 64px 1fr 290px;
+      }
+
+      aside {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .toolbar .meta {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Gangent Memory Graph Viewer</h1>
+      <div class="meta" id="status">Loading graph...</div>
+      <div class="toolbar">
+        <button id="defaultBtn">Load Default</button>
+        <label class="file-label" for="fileInput">Load graph.json</label>
+        <input id="fileInput" type="file" accept=".json,application/json" />
+        <button id="liveBtn">Live: Off</button>
+        <button id="viewBtn">Core View</button>
+        <button id="expandBtn">Expand Node</button>
+        <button id="fitBtn">Fit</button>
+        <button id="shakeBtn">Reheat</button>
+      </div>
+    </header>
+
+    <main class="graph-wrap">
+      <canvas id="graph"></canvas>
+      <div class="hint">Drag nodes. Wheel to zoom. Drag empty space to pan. Click a node for details.</div>
+    </main>
+
+    <aside>
+      <div class="side-section">
+        <h2>Search</h2>
+        <input class="search" id="searchInput" placeholder="Search memory nodes..." />
+      </div>
+
+      <div class="side-section">
+        <h2>Graph Stats</h2>
+        <div class="stats">
+          <div class="stat"><b id="nodeCount">0</b><span>Nodes</span></div>
+          <div class="stat"><b id="edgeCount">0</b><span>Edges</span></div>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <h2>Legend</h2>
+        <div class="legend" id="legend"></div>
+      </div>
+
+      <div class="side-section">
+        <h2>Selected Node</h2>
+        <div id="details" class="body-text">No node selected.</div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const TYPE_COLORS = {
+      fact: "#60a5fa",
+      preference: "#f472b6",
+      decision: "#34d399",
+      issue: "#fb7185",
+      solution: "#22d3ee",
+      concept: "#a78bfa",
+      artifact: "#facc15",
+      task_state: "#38bdf8",
+      constraint: "#fb923c",
+      note: "#94a3b8"
+    };
+
+    const DEMO_GRAPH = {
+      version: 1,
+      nodes: [
+        { node_id: "demo_memory_graph", node_type: "concept", summary: "Adaptive Memory Graph", content: "Typed nodes, typed edges, decay, retrieval, and context assembly.", importance: 1, confidence: .9, decay_score: 1, access_count: 0, project_scope: "gangent", source: "embedded demo", tags: ["memory"] },
+        { node_id: "demo_context_pollution", node_type: "issue", summary: "Context pollution", content: "Continuous chat history can pollute context and increase token cost.", importance: .9, confidence: .9, decay_score: 1, access_count: 0, project_scope: "gangent", source: "embedded demo", tags: ["context"] },
+        { node_id: "demo_decay", node_type: "concept", summary: "Decay mechanism", content: "Unused nodes decay; useful nodes refresh when accessed.", importance: .85, confidence: .9, decay_score: .75, access_count: 2, project_scope: "gangent", source: "embedded demo", tags: ["decay"] },
+        { node_id: "demo_viewer", node_type: "task_state", summary: "Graph viewer", content: "Force-directed draggable visualization for memory nodes and edges.", importance: .95, confidence: .95, decay_score: 1, access_count: 0, project_scope: "gangent", source: "embedded demo", tags: ["viewer"] }
+      ],
+      edges: [
+        { edge_id: "e1", source_node_id: "demo_context_pollution", target_node_id: "demo_memory_graph", edge_type: "fixed_by", weight: 1 },
+        { edge_id: "e2", source_node_id: "demo_decay", target_node_id: "demo_memory_graph", edge_type: "depends_on", weight: .9 },
+        { edge_id: "e3", source_node_id: "demo_memory_graph", target_node_id: "demo_viewer", edge_type: "next_step", weight: 1 }
+      ]
+    };
+
+    const DEFAULT_GRAPH_JSON_SRC = "gangent_knowledge_graph.json";
+    const DEFAULT_GRAPH_DATA_SRC = "gangent_knowledge_graph_data.js";
+    const LIVE_GRAPH_DATA_SRC = ".gangent/memory/graph_data.js";
+    const LIVE_REFRESH_MS = 2000;
+    const CORE_NODE_LIMIT = 45;
+
+    const canvas = document.getElementById("graph");
+    const ctx = canvas.getContext("2d");
+    const statusEl = document.getElementById("status");
+    const detailsEl = document.getElementById("details");
+    const searchInput = document.getElementById("searchInput");
+    const nodeCountEl = document.getElementById("nodeCount");
+    const edgeCountEl = document.getElementById("edgeCount");
+    const legendEl = document.getElementById("legend");
+
+    let graph = normalizeGraph(DEMO_GRAPH);
+    let selected = null;
+    let draggingNode = null;
+    let panning = false;
+    let lastPointer = { x: 0, y: 0 };
+    let transform = { x: 0, y: 0, scale: 1 };
+    let energy = 1;
+    let searchTerm = "";
+    let liveMode = false;
+    let liveLoadInFlight = false;
+    let lastGraphSignature = graphSignature(DEMO_GRAPH);
+    let showAllNodes = false;
+    let expandedNodeIds = new Set();
+
+    function normalizeGraph(raw, previousGraph = null) {
+      const previousNodes = new Map((previousGraph?.nodes || []).map(node => [node.node_id, node]));
+      const nodes = (raw.nodes || []).map((node, index) => ({
+        ...node,
+        displaySummary: cleanText(node.summary, cleanText(node.content, node.node_id)),
+        displayContent: cleanText(node.content, ""),
+        displayLabel: cleanText(node.summary, node.node_id),
+        x: previousNodes.get(node.node_id)?.x ?? Math.cos(index * 2.399) * 180 + Math.random() * 50,
+        y: previousNodes.get(node.node_id)?.y ?? Math.sin(index * 2.399) * 180 + Math.random() * 50,
+        vx: previousNodes.get(node.node_id)?.vx ?? 0,
+        vy: previousNodes.get(node.node_id)?.vy ?? 0,
+        radius: radiusFor(node),
+        fixed: false
+      }));
+      const map = new Map(nodes.map(node => [node.node_id, node]));
+      const edges = (raw.edges || [])
+        .map(edge => ({ ...edge, source: map.get(edge.source_node_id), target: map.get(edge.target_node_id) }))
+        .filter(edge => edge.source && edge.target);
+      return { nodes, edges };
+    }
+
+    function cleanText(value, fallback = "") {
+      const text = String(value ?? "").replace(/\s+/g, " ").trim();
+      if (!text) return String(fallback ?? "");
+      const questionMarks = (text.match(/\?/g) || []).length;
+      const replacementMarks = (text.match(/\uFFFD/g) || []).length;
+      const hasQuestionRun = /\?{2,}/.test(text);
+      const hasMojibake = /[锛�]/.test(text);
+      const badRatio = (questionMarks + replacementMarks) / Math.max(text.length, 1);
+      if (hasQuestionRun || hasMojibake || badRatio > 0.12 || /^[?\uFFFD\s]+$/.test(text)) return String(fallback ?? "");
+      return text;
+    }
+
+    function graphSignature(raw) {
+      return JSON.stringify({
+        generated_at: raw.generated_at || "",
+        nodes: (raw.nodes || []).map(node => [
+          node.node_id,
+          node.access_count || 0,
+          node.decay_score || 0,
+          node.last_accessed_at || "",
+          node.summary || ""
+        ]),
+        edges: (raw.edges || []).map(edge => [
+          edge.edge_id,
+          edge.source_node_id,
+          edge.target_node_id,
+          edge.edge_type,
+          edge.weight || 0
+        ])
+      });
+    }
+
+    function radiusFor(node) {
+      const importance = Number(node.importance ?? .5);
+      const access = Math.min(Number(node.access_count ?? 0), 20);
+      return 8 + importance * 12 + access * .35;
+    }
+
+    function nodeScore(node) {
+      const importance = Number(node.importance ?? 0.5);
+      const decay = Number(node.decay_score ?? 1);
+      const access = Math.min(Number(node.access_count ?? 0), 20) / 20;
+      if (isGeneratedTaskResult(node)) return -1;
+      const typeBoosts = {
+        concept: 0.2,
+        decision: 0.18,
+        issue: 0.17,
+        solution: 0.16,
+        constraint: 0.14,
+        artifact: 0.12,
+        fact: 0.08,
+        preference: 0.08,
+        task_state: 0.02,
+        note: 0
+      };
+      const typeBoost = typeBoosts[node.node_type] ?? 0;
+      return importance * 0.55 + decay * 0.25 + access * 0.2 + typeBoost;
+    }
+
+    function isGeneratedTaskResult(node) {
+      return node.node_type === "task_state" && Array.isArray(node.tags) && node.tags.includes("task_result");
+    }
+
+    function isCoreCandidate(node) {
+      if (isGeneratedTaskResult(node)) return false;
+      if (node.node_type === "note") return false;
+      const label = cleanText(node.displaySummary || node.displayLabel || "", "");
+      if (!label && /^mem_[0-9a-f]{8,}$/i.test(String(node.node_id || ""))) return false;
+      return true;
+    }
+
+    function coreNodeIds() {
+      const ids = new Set();
+      if (showAllNodes) {
+        for (const node of graph.nodes) ids.add(node.node_id);
+        return ids;
+      }
+
+      const candidates = graph.nodes.filter(isCoreCandidate);
+      const ranked = (candidates.length ? candidates : graph.nodes.filter(node => !isGeneratedTaskResult(node)))
+        .sort((a, b) => nodeScore(b) - nodeScore(a))
+        .slice(0, CORE_NODE_LIMIT);
+      for (const node of ranked) ids.add(node.node_id);
+      if (selected) ids.add(selected.node_id);
+      for (const nodeId of expandedNodeIds) ids.add(nodeId);
+
+      for (const edge of graph.edges) {
+        const sourceExpanded = expandedNodeIds.has(edge.source_node_id) || selected?.node_id === edge.source_node_id;
+        const targetExpanded = expandedNodeIds.has(edge.target_node_id) || selected?.node_id === edge.target_node_id;
+        if (sourceExpanded || targetExpanded) {
+          ids.add(edge.source_node_id);
+          ids.add(edge.target_node_id);
+        }
+      }
+      return ids;
+    }
+
+    function activeNodes() {
+      const ids = coreNodeIds();
+      return graph.nodes.filter(node => ids.has(node.node_id));
+    }
+
+    function activeEdges() {
+      const ids = coreNodeIds();
+      return graph.edges.filter(edge => ids.has(edge.source_node_id) && ids.has(edge.target_node_id));
+    }
+
+    function expandNode(node) {
+      if (!node) return;
+      expandedNodeIds.add(node.node_id);
+      for (const edge of graph.edges) {
+        if (edge.source_node_id === node.node_id) expandedNodeIds.add(edge.target_node_id);
+        if (edge.target_node_id === node.node_id) expandedNodeIds.add(edge.source_node_id);
+      }
+      energy = Math.max(energy, 0.75);
+      updateStats();
+    }
+
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(rect.width * dpr);
+      canvas.height = Math.floor(rect.height * dpr);
+      canvas.style.width = rect.width + "px";
+      canvas.style.height = rect.height + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      fit(false);
+    }
+
+    function updateStats() {
+      const visibleNodes = activeNodes();
+      const visibleEdges = activeEdges();
+      nodeCountEl.textContent = `${visibleNodes.length}/${graph.nodes.length}`;
+      edgeCountEl.textContent = `${visibleEdges.length}/${graph.edges.length}`;
+      statusEl.textContent = `${visibleNodes.length}/${graph.nodes.length} nodes visible, ${visibleEdges.length}/${graph.edges.length} edges visible`;
+    }
+
+    function renderLegend() {
+      legendEl.innerHTML = Object.entries(TYPE_COLORS).map(([type, color]) =>
+        `<span><i class="dot" style="background:${color}"></i>${type}</span>`
+      ).join("");
+    }
+
+    function tick() {
+      simulate();
+      draw();
+      requestAnimationFrame(tick);
+    }
+
+    function simulate() {
+      if (energy < 0.005) return;
+      const nodes = activeNodes();
+      const edges = activeEdges();
+      const repulsion = 7800;
+      const spring = 0.012;
+
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const a = nodes[i], b = nodes[j];
+          let dx = b.x - a.x;
+          let dy = b.y - a.y;
+          let distSq = dx * dx + dy * dy + 0.01;
+          let dist = Math.sqrt(distSq);
+          let force = repulsion / distSq;
+          let fx = (dx / dist) * force;
+          let fy = (dy / dist) * force;
+          if (!a.fixed) { a.vx -= fx; a.vy -= fy; }
+          if (!b.fixed) { b.vx += fx; b.vy += fy; }
+        }
+      }
+
+      for (const edge of edges) {
+        const a = edge.source, b = edge.target;
+        let dx = b.x - a.x;
+        let dy = b.y - a.y;
+        let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        let target = 110 + (1 - Math.min(Number(edge.weight ?? 1), 1)) * 90;
+        let force = (dist - target) * spring;
+        let fx = (dx / dist) * force;
+        let fy = (dy / dist) * force;
+        if (!a.fixed) { a.vx += fx; a.vy += fy; }
+        if (!b.fixed) { b.vx -= fx; b.vy -= fy; }
+      }
+
+      for (const node of nodes) {
+        if (node.fixed) continue;
+        node.vx += -node.x * 0.0015;
+        node.vy += -node.y * 0.0015;
+        node.vx *= 0.82;
+        node.vy *= 0.82;
+        node.x += node.vx * energy;
+        node.y += node.vy * energy;
+      }
+      energy *= 0.992;
+    }
+
+    function draw() {
+      const rect = canvas.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      ctx.save();
+      ctx.translate(rect.width / 2 + transform.x, rect.height / 2 + transform.y);
+      ctx.scale(transform.scale, transform.scale);
+
+      for (const edge of activeEdges()) drawEdge(edge);
+      for (const node of activeNodes()) drawNode(node);
+
+      ctx.restore();
+    }
+
+    function drawEdge(edge) {
+      const a = edge.source, b = edge.target;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.lineWidth = Math.max(1, Number(edge.weight ?? 1) * 2);
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.36)";
+      ctx.stroke();
+
+      const mx = (a.x + b.x) / 2;
+      const my = (a.y + b.y) / 2;
+      ctx.font = '10px Inter, "Microsoft YaHei", "Segoe UI", sans-serif';
+      ctx.fillStyle = "rgba(203, 213, 225, 0.72)";
+      ctx.fillText(edge.edge_type || "edge", mx + 4, my - 4);
+    }
+
+    function drawNode(node) {
+      const isSelected = selected && selected.node_id === node.node_id;
+      const isMatch = searchTerm && nodeMatches(node, searchTerm);
+      const stale = Boolean(node.stale);
+      const color = stale ? "#64748b" : (TYPE_COLORS[node.node_type] || TYPE_COLORS.note);
+      const alpha = Math.max(0.25, Number(node.decay_score ?? 1));
+
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      ctx.lineWidth = isSelected ? 4 : isMatch ? 3 : 1.5;
+      ctx.strokeStyle = isSelected ? "#ffffff" : isMatch ? "#facc15" : "rgba(226, 232, 240, 0.55)";
+      ctx.stroke();
+
+      const label = nodeLabel(node);
+      ctx.font = '12px Inter, "Microsoft YaHei", "Segoe UI", sans-serif';
+      ctx.fillStyle = "#e5e7eb";
+      ctx.textAlign = "center";
+      ctx.fillText(shorten(label, 26), node.x, node.y + node.radius + 15);
+      ctx.textAlign = "left";
+    }
+
+    function screenToWorld(x, y) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (x - rect.left - rect.width / 2 - transform.x) / transform.scale,
+        y: (y - rect.top - rect.height / 2 - transform.y) / transform.scale
+      };
+    }
+
+    function findNodeAt(point) {
+      const nodes = activeNodes();
+      for (let i = nodes.length - 1; i >= 0; i--) {
+        const node = nodes[i];
+        const dx = point.x - node.x;
+        const dy = point.y - node.y;
+        if (Math.sqrt(dx * dx + dy * dy) <= node.radius + 8) return node;
+      }
+      return null;
+    }
+
+    canvas.addEventListener("pointerdown", event => {
+      const point = screenToWorld(event.clientX, event.clientY);
+      const node = findNodeAt(point);
+      lastPointer = { x: event.clientX, y: event.clientY };
+      if (node) {
+        draggingNode = node;
+        draggingNode.fixed = true;
+        selected = node;
+        expandNode(node);
+        showDetails(node);
+        canvas.classList.add("dragging");
+      } else {
+        panning = true;
+      }
+    });
+
+    canvas.addEventListener("pointermove", event => {
+      if (draggingNode) {
+        const point = screenToWorld(event.clientX, event.clientY);
+        draggingNode.x = point.x;
+        draggingNode.y = point.y;
+        draggingNode.vx = 0;
+        draggingNode.vy = 0;
+        energy = Math.max(energy, .45);
+      } else if (panning) {
+        transform.x += event.clientX - lastPointer.x;
+        transform.y += event.clientY - lastPointer.y;
+      }
+      lastPointer = { x: event.clientX, y: event.clientY };
+    });
+
+    window.addEventListener("pointerup", () => {
+      if (draggingNode) draggingNode.fixed = false;
+      draggingNode = null;
+      panning = false;
+      canvas.classList.remove("dragging");
+    });
+
+    canvas.addEventListener("wheel", event => {
+      event.preventDefault();
+      const delta = event.deltaY < 0 ? 1.08 : 0.92;
+      transform.scale = Math.max(0.2, Math.min(3.5, transform.scale * delta));
+    }, { passive: false });
+
+    searchInput.addEventListener("input", () => {
+      searchTerm = searchInput.value.trim().toLowerCase();
+      const first = graph.nodes.find(node => searchTerm && nodeMatches(node, searchTerm));
+      if (first) {
+        selected = first;
+        expandNode(first);
+        showDetails(first);
+      }
+    });
+
+    document.getElementById("fitBtn").addEventListener("click", () => fit(true));
+    document.getElementById("viewBtn").addEventListener("click", () => {
+      showAllNodes = !showAllNodes;
+      document.getElementById("viewBtn").textContent = showAllNodes ? "All Nodes" : "Core View";
+      updateStats();
+      fit(true);
+      energy = 1;
+    });
+    document.getElementById("expandBtn").addEventListener("click", () => {
+      if (selected) {
+        expandNode(selected);
+        statusEl.textContent = `Expanded neighbors for ${nodeLabel(selected)}`;
+      } else {
+        statusEl.textContent = "Select a node first, then expand it.";
+      }
+    });
+    document.getElementById("liveBtn").addEventListener("click", () => {
+      liveMode = !liveMode;
+      document.getElementById("liveBtn").textContent = liveMode ? "Live: On" : "Live: Off";
+      statusEl.textContent = liveMode ? "Live reload enabled." : "Live reload paused.";
+      if (liveMode) loadLiveGraph();
+    });
+    document.getElementById("defaultBtn").addEventListener("click", () => {
+      liveMode = false;
+      document.getElementById("liveBtn").textContent = "Live: Off";
+      loadDefaultJsonGraph();
+    });
+    document.getElementById("shakeBtn").addEventListener("click", () => {
+      for (const node of graph.nodes) {
+        node.vx += (Math.random() - .5) * 16;
+        node.vy += (Math.random() - .5) * 16;
+      }
+      energy = 1;
+    });
+
+    document.getElementById("fileInput").addEventListener("change", event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          liveMode = false;
+          document.getElementById("liveBtn").textContent = "Live: Off";
+          const raw = JSON.parse(reader.result);
+          graph = normalizeGraph(raw, graph);
+          lastGraphSignature = graphSignature(raw);
+          selected = null;
+          expandedNodeIds = new Set();
+          energy = 1;
+          updateStats();
+          fit(true);
+          detailsEl.textContent = "Graph loaded. Click a node for details.";
+          statusEl.textContent = `Loaded ${file.name}`;
+        } catch (error) {
+          statusEl.textContent = `Load failed: ${error.message}`;
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    async function loadDefaultJsonGraph() {
+      try {
+        const response = await fetch(`${DEFAULT_GRAPH_JSON_SRC}?t=${Date.now()}`, { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const raw = await response.json();
+        applyGraph(raw, `Loaded default ${DEFAULT_GRAPH_JSON_SRC}`);
+      } catch (error) {
+        loadDefaultDataScript(error);
+      }
+    }
+
+    function loadDefaultDataScript(fetchError) {
+      const script = document.createElement("script");
+      script.src = `${DEFAULT_GRAPH_DATA_SRC}?t=${Date.now()}`;
+      script.async = true;
+      script.onload = () => {
+        script.remove();
+        const raw = window.GANGENT_DEFAULT_MEMORY_GRAPH;
+        if (!raw || !Array.isArray(raw.nodes)) {
+          statusEl.textContent = `Default data file loaded, but payload is invalid: ${DEFAULT_GRAPH_DATA_SRC}`;
+          return;
+        }
+        applyGraph(raw, `Loaded default ${DEFAULT_GRAPH_DATA_SRC}`);
+      };
+      script.onerror = () => {
+        script.remove();
+        statusEl.textContent = `Default graph failed. Tried ${DEFAULT_GRAPH_JSON_SRC} and ${DEFAULT_GRAPH_DATA_SRC}. If needed, use Load graph.json.`;
+        console.warn("Default JSON load failed:", fetchError);
+      };
+      document.head.appendChild(script);
+    }
+
+    function applyGraph(raw, message) {
+      graph = normalizeGraph(raw, graph);
+      lastGraphSignature = graphSignature(raw);
+      selected = selected ? graph.nodes.find(node => node.node_id === selected.node_id) || null : null;
+      expandedNodeIds = new Set();
+      energy = 1;
+      updateStats();
+      fit(true);
+      if (selected) showDetails(selected);
+      else detailsEl.textContent = "Graph loaded. Click a node for details.";
+      statusEl.textContent = `${message}: ${graph.nodes.length} nodes, ${graph.edges.length} edges`;
+    }
+
+    function loadLiveGraph() {
+      if (!liveMode || liveLoadInFlight) return;
+      liveLoadInFlight = true;
+      const script = document.createElement("script");
+      script.src = `${LIVE_GRAPH_DATA_SRC}?t=${Date.now()}`;
+      script.async = true;
+      script.onload = () => {
+        liveLoadInFlight = false;
+        script.remove();
+        const raw = window.GANGENT_MEMORY_GRAPH;
+        if (!raw || !Array.isArray(raw.nodes)) {
+          statusEl.textContent = "Live graph file loaded, but graph payload is invalid.";
+          return;
+        }
+        const signature = graphSignature(raw);
+        if (signature === lastGraphSignature) {
+          statusEl.textContent = `Live graph unchanged: ${graph.nodes.length} nodes, ${graph.edges.length} edges`;
+          return;
+        }
+        applyGraph(raw, "Live graph updated");
+      };
+      script.onerror = () => {
+        liveLoadInFlight = false;
+        script.remove();
+        liveMode = false;
+        document.getElementById("liveBtn").textContent = "Live: Off";
+        statusEl.textContent = "Live graph not found. Falling back to default graph.";
+        loadDefaultJsonGraph();
+      };
+      document.head.appendChild(script);
+    }
+
+    function showDetails(node) {
+      const tags = (node.tags || []).map(tag => `<span class="pill">${escapeHtml(tag)}</span>`).join("");
+      const detailId = `detail_${String(node.node_id).replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+      detailsEl.innerHTML = `
+        <div class="detail-title">${escapeHtml(nodeLabel(node))}</div>
+        <div class="pill-row">
+          <span class="pill">${escapeHtml(node.node_type || "note")}</span>
+          <span class="pill">importance ${Number(node.importance ?? 0).toFixed(2)}</span>
+          <span class="pill">decay ${Number(node.decay_score ?? 0).toFixed(2)}</span>
+          <span class="pill">access ${Number(node.access_count ?? 0)}</span>
+          ${node.stale ? '<span class="pill">stale</span>' : ''}
+        </div>
+        ${tags ? `<div class="pill-row">${tags}</div>` : ""}
+        <div class="summary-text">${escapeHtml(nodeSummary(node))}</div>
+        <div class="muted-line">Details are loaded on demand to keep the graph readable.</div>
+        <div class="pill-row">
+          <button class="small-btn" data-detail-target="${detailId}">Load details</button>
+        </div>
+        <div id="${detailId}" class="body-text" hidden>${escapeHtml(nodeDetail(node))}</div>
+        <div class="pill-row">
+          <span class="pill">project ${escapeHtml(node.project_scope || "-")}</span>
+          <span class="pill">source ${escapeHtml(node.source || "-")}</span>
+        </div>
+      `;
+      const toggle = detailsEl.querySelector("[data-detail-target]");
+      const detail = document.getElementById(detailId);
+      if (toggle && detail) {
+        toggle.addEventListener("click", () => {
+          detail.hidden = !detail.hidden;
+          toggle.textContent = detail.hidden ? "Load details" : "Hide details";
+        });
+      }
+    }
+
+    function fit(animate) {
+      const nodes = activeNodes();
+      if (!nodes.length) return;
+      const rect = canvas.getBoundingClientRect();
+      const xs = nodes.map(node => node.x);
+      const ys = nodes.map(node => node.y);
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const minY = Math.min(...ys), maxY = Math.max(...ys);
+      const width = Math.max(1, maxX - minX + 180);
+      const height = Math.max(1, maxY - minY + 180);
+      const scale = Math.max(0.35, Math.min(1.8, Math.min(rect.width / width, rect.height / height)));
+      const next = {
+        scale,
+        x: -((minX + maxX) / 2) * scale,
+        y: -((minY + maxY) / 2) * scale
+      };
+      transform = animate ? next : { ...transform, ...next };
+    }
+
+    function nodeMatches(node, term) {
+      const text = [
+        node.node_id,
+        node.node_type,
+        node.displayLabel,
+        node.displaySummary,
+        node.displayContent,
+        node.summary,
+        node.content,
+        node.project_scope,
+        node.source,
+        ...(node.tags || [])
+      ].join(" ").toLowerCase();
+      return text.includes(term);
+    }
+
+    function shorten(text, max) {
+      text = String(text || "").replace(/\s+/g, " ").trim();
+      return text.length > max ? text.slice(0, max - 3) + "..." : text;
+    }
+
+    function nodeLabel(node) {
+      return englishNodeLabel(node);
+    }
+
+    function nodeSummary(node) {
+      return cleanText(node.displaySummary, nodeLabel(node));
+    }
+
+    function nodeDetail(node) {
+      return cleanText(node.displayContent, nodeSummary(node));
+    }
+
+    function englishNodeLabel(node) {
+      if (isGeneratedTaskResult(node)) return taskResultLabel(node);
+      const raw = cleanText(node.displayLabel, "");
+      if (raw && isMostlyEnglish(raw)) return shorten(raw, 54);
+      const summary = cleanText(node.displaySummary, "");
+      if (summary && isMostlyEnglish(summary)) return shorten(summary, 54);
+      return humanizeNodeId(node.node_id, node.node_type);
+    }
+
+    function isMostlyEnglish(value) {
+      const text = String(value || "").trim();
+      if (!text) return false;
+      const ascii = (text.match(/[\x20-\x7E]/g) || []).length;
+      return ascii / Math.max(text.length, 1) > 0.92 && !/[?\uFFFD]{2,}/.test(text);
+    }
+
+    function taskResultLabel(node) {
+      const summary = cleanText(node.displaySummary, "");
+      if (summary && isMostlyEnglish(summary)) return shorten(summary.replace(/^completed:\s*/i, "Task: "), 54);
+      const content = cleanText(node.displayContent, "");
+      const finalMatch = content.match(/Final answer:\s*([^\n.。!?]{12,120})/i);
+      if (finalMatch && isMostlyEnglish(finalMatch[1])) return shorten(`Task Result: ${finalMatch[1]}`, 54);
+      const requestMatch = content.match(/User request:\s*([^\n.。!?]{12,120})/i);
+      if (requestMatch && isMostlyEnglish(requestMatch[1])) return shorten(`Task: ${requestMatch[1]}`, 54);
+      const date = String(node.created_at || "").slice(0, 10);
+      return date ? `Task Result: ${date}` : "Task Result";
+    }
+
+    function humanizeNodeId(nodeId, nodeType) {
+      const type = String(nodeType || "node")
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, char => char.toUpperCase());
+      const label = String(nodeId || "memory_node")
+        .replace(/^(mem|doc|edge|task)_/i, "")
+        .replace(/[_-]+/g, " ")
+        .replace(/\b(api|cli|mcp|rag|llm|json|bm25|ui)\b/gi, token => token.toUpperCase())
+        .replace(/\b\w/g, char => char.toUpperCase());
+      return `${type}: ${label || "Memory Node"}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    window.addEventListener("resize", resize);
+    renderLegend();
+    updateStats();
+    document.getElementById("liveBtn").textContent = "Live: Off";
+    statusEl.textContent = `Loading default ${DEFAULT_GRAPH_JSON_SRC} ...`;
+    resize();
+    loadDefaultJsonGraph();
+    setInterval(loadLiveGraph, LIVE_REFRESH_MS);
+    tick();
+  </script>
+</body>
+</html>

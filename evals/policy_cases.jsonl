@@ -1,0 +1,16 @@
+{"name":"allow_list_files_root","tool_name":"list_files","tool_args":{"path":"."},"expected_mode":"allow"}
+{"name":"allow_read_readme","tool_name":"read_file","tool_args":{"path":"README.md"},"expected_mode":"allow"}
+{"name":"block_path_escape","tool_name":"read_file","tool_args":{"path":"../outside.txt"},"expected_mode":"block"}
+{"name":"block_shell_tool","tool_name":"shell","tool_args":{"cmd":"dir"},"expected_mode":"block"}
+{"name":"allow_large_file_partial_read","tool_name":"read_file","tool_args":{"path":"large.txt"},"expected_mode":"allow"}
+{"name":"escalate_hidden_file","tool_name":"read_file","tool_args":{"path":".hidden"},"expected_mode":"escalate"}
+{"name":"allow_write_new_file","tool_name":"write_file","tool_args":{"path":"created.txt","content":"hello","overwrite":false},"expected_mode":"allow"}
+{"name":"block_write_hidden_file","tool_name":"write_file","tool_args":{"path":".env","content":"SECRET=1","overwrite":false},"expected_mode":"block"}
+{"name":"allow_git_status","tool_name":"git_status","tool_args":{},"expected_mode":"allow"}
+{"name":"allow_compile_python","tool_name":"compile_python","tool_args":{},"expected_mode":"allow"}
+{"name":"escalate_run_tests","tool_name":"run_tests","tool_args":{},"expected_mode":"escalate"}
+{"name":"allow_search_context","tool_name":"search_context","tool_args":{"query":"runtime policy","top_k":3},"expected_mode":"allow"}
+{"name":"allow_run_command_python_version","tool_name":"run_command","tool_args":{"args":["python","--version"],"cwd":".","timeout_seconds":10},"expected_mode":"allow"}
+{"name":"block_run_command_shell_host","tool_name":"run_command","tool_args":{"args":["cmd","/c","dir"],"cwd":".","timeout_seconds":10},"expected_mode":"block"}
+{"name":"allow_apply_patch_add_file","tool_name":"apply_patch","tool_args":{"patch":"*** Begin Patch\n*** Add File: patched.txt\n+hello\n*** End Patch"},"expected_mode":"allow"}
+{"name":"block_apply_patch_delete_file","tool_name":"apply_patch","tool_args":{"patch":"*** Begin Patch\n*** Delete File: README.md\n*** End Patch"},"expected_mode":"block"}

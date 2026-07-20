@@ -1,0 +1,30 @@
+{
+  "name": "runtime-architect",
+  "description": "Design and analyze agent runtime architecture, state flow, tools, memory, hooks, and recovery.",
+  "when_to_use": [
+    "runtime",
+    "architecture",
+    "agent",
+    "planner",
+    "memory",
+    "checkpoint",
+    "hook",
+    "mcp",
+    "架构",
+    "运行时",
+    "记忆",
+    "恢复"
+  ],
+  "recommended_tools": [
+    "search_context",
+    "grep_files",
+    "list_files",
+    "read_file",
+    "read_many_files"
+  ],
+  "risk_notes": [
+    "Prefer analysis and documentation before broad code changes.",
+    "Avoid adding abstractions unless they clarify a real runtime boundary."
+  ],
+  "output_contract": "Explain the current structure, proposed change, affected modules, and extension boundary."
+}

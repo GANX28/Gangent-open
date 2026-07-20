@@ -1,0 +1,1023 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gangent Flowcharts</title>
+  <style>
+    :root {
+      --bg: #e9edf3;
+      --paper: #ffffff;
+      --ink: #172033;
+      --muted: #64748b;
+      --line: #94a3b8;
+      --blue: #2563eb;
+      --green: #15803d;
+      --orange: #b45309;
+      --red: #b91c1c;
+      --purple: #7c3aed;
+      --slate: #475569;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    .page {
+      width: min(1320px, calc(100% - 36px));
+      min-height: calc(100vh - 36px);
+      margin: 18px auto;
+      padding: 22px 24px 26px;
+      background: var(--paper);
+      border: 1px solid #d7dee9;
+      border-radius: 8px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, .08);
+      break-after: page;
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .page:last-child {
+      break-after: auto;
+      page-break-after: auto;
+    }
+
+    .page-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-end;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 10px;
+    }
+
+    h1, h2 {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    h1 { font-size: 28px; }
+    h2 { font-size: 23px; }
+
+    .desc {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .page-no {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    svg {
+      width: 100%;
+      height: auto;
+      flex: 1;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #fbfdff;
+    }
+
+    .label {
+      font-size: 13px;
+      fill: var(--ink);
+      font-weight: 650;
+    }
+
+    .small {
+      font-size: 11px;
+      fill: var(--muted);
+      font-weight: 400;
+    }
+
+    .tiny {
+      font-size: 10px;
+      fill: var(--muted);
+    }
+
+    .node {
+      fill: #ffffff;
+      stroke: var(--line);
+      stroke-width: 1.4;
+    }
+
+    .blue { stroke: var(--blue); fill: #eff6ff; }
+    .green { stroke: var(--green); fill: #f0fdf4; }
+    .orange { stroke: var(--orange); fill: #fff7ed; }
+    .red { stroke: var(--red); fill: #fef2f2; }
+    .purple { stroke: var(--purple); fill: #f5f3ff; }
+    .slate { stroke: var(--slate); fill: #f8fafc; }
+
+    .arrow {
+      fill: none;
+      stroke: #475569;
+      stroke-width: 1.7;
+      marker-end: url(#arrow);
+    }
+
+    .soft-arrow {
+      fill: none;
+      stroke: #94a3b8;
+      stroke-width: 1.5;
+      marker-end: url(#arrow);
+      stroke-dasharray: 5 4;
+    }
+
+    .danger-arrow {
+      fill: none;
+      stroke: var(--red);
+      stroke-width: 1.8;
+      marker-end: url(#arrow-red);
+    }
+
+    .lane {
+      fill: rgba(241, 245, 249, .72);
+      stroke: #e2e8f0;
+      stroke-width: 1;
+    }
+
+    .lane-title {
+      font-size: 12px;
+      fill: #475569;
+      font-weight: 700;
+    }
+
+    .edge-label {
+      font-size: 10px;
+      fill: #475569;
+      font-weight: 600;
+    }
+
+    .tall-flow .label { font-size: 16px; }
+    .tall-flow .small { font-size: 13px; }
+    .tall-flow .tiny { font-size: 12px; }
+    .tall-flow .lane-title { font-size: 14px; }
+    .tall-flow .edge-label { font-size: 12px; }
+
+    @media print {
+      @page { size: A4 portrait; margin: 8mm; }
+      html, body { background: #fff; margin: 0; padding: 0; }
+      .page {
+        width: 100%;
+        height: 281mm;
+        min-height: 0;
+        margin: 0;
+        padding: 5mm;
+        gap: 3mm;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        overflow: hidden;
+      }
+      .page-head { flex: 0 0 auto; }
+      .page svg {
+        width: 100%;
+        height: 0;
+        min-height: 0;
+        flex: 1 1 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="page">
+    <div class="page-head">
+      <div>
+        <h1>Gangent 流程图总览</h1>
+        <p class="desc">01 展示完整 Runtime 闭环；后续每页沿同一立式状态流拆开一个关键模块，便于分别理解输入、控制、执行、异常分支与反馈闭环。</p>
+      </div>
+      <div class="page-no">00 / Index</div>
+    </div>
+    <svg viewBox="0 0 1200 930" preserveAspectRatio="xMidYMin meet" role="img" aria-label="Gangent vertical flowchart index">
+      <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#475569"></path></marker></defs>
+      <rect class="node blue" x="400" y="65" width="400" height="82" rx="12"></rect>
+      <text class="label" x="600" y="96" text-anchor="middle">01 总体运行闭环</text>
+      <text class="small" x="600" y="121" text-anchor="middle">输入 → 计划 → 模型 → 工具 → 验证 → 完成或恢复</text>
+      <rect class="lane" x="55" y="190" width="1090" height="670" rx="16"></rect>
+      <text class="lane-title" x="82" y="225">关键模块立式运行图</text>
+
+      <rect class="node orange" x="100" y="275" width="430" height="76" rx="12"></rect>
+      <text class="label" x="315" y="305" text-anchor="middle">02 Planner + Budget + Model Routing</text>
+      <text class="small" x="315" y="328" text-anchor="middle">计划质量、资源边界与模型选择</text>
+      <rect class="node blue" x="670" y="275" width="430" height="76" rx="12"></rect>
+      <text class="label" x="885" y="305" text-anchor="middle">03 Tool Calling + Policy</text>
+      <text class="small" x="885" y="328" text-anchor="middle">动作契约、权限门禁与真实副作用</text>
+
+      <rect class="node green" x="100" y="390" width="430" height="76" rx="12"></rect>
+      <text class="label" x="315" y="420" text-anchor="middle">04 Validator + Finish Guard</text>
+      <text class="small" x="315" y="443" text-anchor="middle">程序化验收与最终完成门禁</text>
+      <rect class="node red" x="670" y="390" width="430" height="76" rx="12"></rect>
+      <text class="label" x="885" y="420" text-anchor="middle">05 Checkpoint + Resume + Error Recovery</text>
+      <text class="small" x="885" y="443" text-anchor="middle">状态保存、健康检查与恢复决策</text>
+
+      <rect class="node purple" x="100" y="505" width="430" height="76" rx="12"></rect>
+      <text class="label" x="315" y="535" text-anchor="middle">06 Dynamic Context + Memory</text>
+      <text class="small" x="315" y="558" text-anchor="middle">按需加载、污染控制与受控写回</text>
+      <rect class="node orange" x="670" y="505" width="430" height="76" rx="12"></rect>
+      <text class="label" x="885" y="535" text-anchor="middle">07 Event Queue + Replanning</text>
+      <text class="small" x="885" y="558" text-anchor="middle">运行中输入、安全边界与计划修订</text>
+
+      <rect class="node slate" x="100" y="620" width="430" height="76" rx="12"></rect>
+      <text class="label" x="315" y="650" text-anchor="middle">08 Log + Audit + Evaluation</text>
+      <text class="small" x="315" y="673" text-anchor="middle">调试记录、证据链与质量反馈</text>
+      <rect class="node blue" x="670" y="620" width="430" height="76" rx="12"></rect>
+      <text class="label" x="885" y="650" text-anchor="middle">09 CLI / Web Shell（可选）</text>
+      <text class="small" x="885" y="673" text-anchor="middle">可替换入口、状态展示与结果回传</text>
+
+      <path class="soft-arrow" d="M600 147 V190"></path>
+      <path class="soft-arrow" d="M530 313 H670"></path>
+      <path class="soft-arrow" d="M885 351 C885 370 530 370 530 428"></path>
+      <path class="soft-arrow" d="M530 428 H670"></path>
+      <path class="soft-arrow" d="M885 466 C885 485 530 485 530 543"></path>
+      <path class="soft-arrow" d="M530 543 H670"></path>
+      <path class="soft-arrow" d="M885 581 C885 600 530 600 530 658"></path>
+      <path class="soft-arrow" d="M530 658 H670"></path>
+    </svg>
+  </section>
+
+  <section class="page">
+    <div class="page-head">
+      <div>
+        <h2>01 总体运行闭环</h2>
+        <p class="desc">主链路始终从上到下：先建立任务和计划，再进入模型决策与工具执行，最后更新状态、验证结果并选择完成或恢复。左右分支只表示 Fast Path、Tool Call 和异常处理。</p>
+      </div>
+      <div class="page-no">01 / Runtime</div>
+    </div>
+    <svg class="tall-flow" viewBox="0 0 1200 1880" preserveAspectRatio="none" role="img" aria-label="Gangent vertical end-to-end runtime workflow">
+      <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#475569"></path></marker>
+        <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#b91c1c"></path></marker>
+      </defs>
+
+      <rect class="lane" x="40" y="40" width="1120" height="560" rx="16"></rect>
+      <text class="lane-title" x="68" y="74">A · 任务建立与规划</text>
+
+      <rect class="node green" x="420" y="95" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="126" text-anchor="middle">1. 用户输入任务</text>
+      <text class="small" x="600" y="151" text-anchor="middle">CLI / Web / Session</text>
+
+      <rect class="node blue" x="420" y="215" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="246" text-anchor="middle">2. 创建任务</text>
+      <text class="small" x="600" y="271" text-anchor="middle">TaskInput + Task + Session</text>
+      <path class="arrow" d="M600 177 V215"></path>
+
+      <polygon class="node orange" points="600,330 730,395 600,460 470,395"></polygon>
+      <text class="label" x="600" y="387" text-anchor="middle">3. 判断任务类型</text>
+      <text class="small" x="600" y="413" text-anchor="middle">simple / complex</text>
+      <path class="arrow" d="M600 297 V330"></path>
+
+      <rect class="node green" x="90" y="350" width="270" height="90" rx="12"></rect>
+      <text class="label" x="225" y="383" text-anchor="middle">Fast Path</text>
+      <text class="small" x="225" y="408" text-anchor="middle">简单任务直接进入最小执行链路</text>
+      <path class="soft-arrow" d="M470 395 H360"></path>
+      <text class="edge-label" x="408" y="379" text-anchor="middle">简单</text>
+
+      <rect class="node orange" x="840" y="330" width="290" height="130" rx="12"></rect>
+      <text class="label" x="985" y="359" text-anchor="middle">4. 生成和检查计划</text>
+      <text class="small" x="985" y="385" text-anchor="middle">PlanSpec → Plan Schema → PlanLinter</text>
+      <text class="small" x="985" y="408" text-anchor="middle">Budget / Policy → PlanCompiler</text>
+      <text class="tiny" x="985" y="433" text-anchor="middle">输出 Runtime 可执行的 PlanStep</text>
+      <path class="arrow" d="M730 395 H840"></path>
+      <text class="edge-label" x="785" y="379" text-anchor="middle">复杂</text>
+
+      <rect class="node purple" x="400" y="500" width="400" height="86" rx="12"></rect>
+      <text class="label" x="600" y="531" text-anchor="middle">5. 初始化运行状态</text>
+      <text class="small" x="600" y="556" text-anchor="middle">AgentState + Budget + Manifest + Checkpoint</text>
+      <path class="arrow" d="M225 440 V543 H400"></path>
+      <path class="arrow" d="M985 460 V543 H800"></path>
+
+      <rect class="lane" x="40" y="630" width="1120" height="560" rx="16"></rect>
+      <text class="lane-title" x="68" y="664">B · 模型决策与真实执行</text>
+
+      <rect class="node purple" x="400" y="695" width="400" height="108" rx="12"></rect>
+      <text class="label" x="600" y="726" text-anchor="middle">6. 构建 ModelInput</text>
+      <text class="small" x="600" y="752" text-anchor="middle">当前任务 + 当前步骤 + Dynamic Context</text>
+      <text class="tiny" x="600" y="777" text-anchor="middle">Memory / Skill + 可见工具 + 历史结果和约束</text>
+      <path class="arrow" d="M600 586 V695"></path>
+
+      <rect class="node orange" x="430" y="845" width="340" height="86" rx="12"></rect>
+      <text class="label" x="600" y="876" text-anchor="middle">7. 调用大模型</text>
+      <text class="small" x="600" y="901" text-anchor="middle">LLM Client → Provider / Model</text>
+      <path class="arrow" d="M600 803 V845"></path>
+
+      <polygon class="node orange" points="600,970 740,1040 600,1110 460,1040"></polygon>
+      <text class="label" x="600" y="1029" text-anchor="middle">8. ActionDecision</text>
+      <text class="small" x="600" y="1055" text-anchor="middle">Answer / Tool Call / Wait User / Finish</text>
+      <path class="arrow" d="M600 931 V970"></path>
+
+      <rect class="node red" x="850" y="970" width="280" height="104" rx="12"></rect>
+      <text class="label" x="990" y="1000" text-anchor="middle">9. 工具调用前控制</text>
+      <text class="small" x="990" y="1026" text-anchor="middle">工具存在 → Step 允许 → JSON Schema</text>
+      <text class="tiny" x="990" y="1051" text-anchor="middle">高风险动作进入人工审批</text>
+      <path class="arrow" d="M740 1040 H850"></path>
+      <text class="edge-label" x="794" y="1024" text-anchor="middle">Tool Call</text>
+
+      <rect class="node green" x="850" y="1100" width="280" height="82" rx="12"></rect>
+      <text class="label" x="990" y="1131" text-anchor="middle">10. Tool Runtime</text>
+      <text class="small" x="990" y="1155" text-anchor="middle">文件 / 命令 / Git / 外部服务</text>
+      <text class="tiny" x="990" y="1173" text-anchor="middle">统一返回 ToolResult</text>
+      <path class="arrow" d="M990 1074 V1100"></path>
+
+      <rect class="node red" x="70" y="990" width="280" height="92" rx="12"></rect>
+      <text class="label" x="210" y="1022" text-anchor="middle">Wait User</text>
+      <text class="small" x="210" y="1048" text-anchor="middle">保存 Checkpoint，等待新输入或审批</text>
+      <path class="danger-arrow" d="M460 1040 H350"></path>
+      <text class="edge-label" x="405" y="1024" text-anchor="middle">Wait</text>
+
+      <rect class="lane" x="40" y="1220" width="1120" height="620" rx="16"></rect>
+      <text class="lane-title" x="68" y="1254">C · 状态、证据、验证与结束</text>
+
+      <rect class="node purple" x="400" y="1290" width="400" height="100" rx="12"></rect>
+      <text class="label" x="600" y="1321" text-anchor="middle">11. 更新状态和证据</text>
+      <text class="small" x="600" y="1347" text-anchor="middle">AgentState + Source / Output Manifest</text>
+      <text class="tiny" x="600" y="1372" text-anchor="middle">Audit + Checkpoint</text>
+      <path class="arrow" d="M600 1110 V1290"></path>
+      <text class="edge-label" x="616" y="1205">Answer / Finish candidate</text>
+      <path class="arrow" d="M990 1182 V1340 H800"></path>
+
+      <polygon class="node blue" points="600,1430 735,1495 600,1560 465,1495"></polygon>
+      <text class="label" x="600" y="1474" text-anchor="middle">12. Validator 验收</text>
+      <text class="small" x="600" y="1500" text-anchor="middle">文件 / JSON / 完整性</text>
+      <text class="tiny" x="600" y="1524" text-anchor="middle">证据支持 + Exit Criteria</text>
+      <path class="arrow" d="M600 1390 V1430"></path>
+
+      <polygon class="node orange" points="600,1600 745,1670 600,1740 455,1670"></polygon>
+      <text class="label" x="600" y="1646" text-anchor="middle">13. Runtime 决定下一步</text>
+      <text class="small" x="600" y="1672" text-anchor="middle">Finish / Repair / Replan</text>
+      <text class="tiny" x="600" y="1696" text-anchor="middle">Wait User / Resume / Failed</text>
+      <path class="arrow" d="M600 1560 V1600"></path>
+
+      <rect class="node green" x="350" y="1765" width="500" height="64" rx="12"></rect>
+      <text class="label" x="600" y="1791" text-anchor="middle">14. 任务结束</text>
+      <text class="small" x="600" y="1815" text-anchor="middle">Final Answer + Files + Audit + Token / Step / Time</text>
+      <path class="arrow" d="M600 1740 V1765"></path>
+      <text class="edge-label" x="617" y="1758">验证通过</text>
+
+      <rect class="node orange" x="850" y="1618" width="280" height="104" rx="12"></rect>
+      <text class="label" x="990" y="1650" text-anchor="middle">Repair / Replan</text>
+      <text class="small" x="990" y="1676" text-anchor="middle">补读 / 补写 / 修格式</text>
+      <text class="tiny" x="990" y="1701" text-anchor="middle">或修改剩余计划 → 下一轮 ModelInput</text>
+      <path class="danger-arrow" d="M745 1670 H850"></path>
+      <path class="danger-arrow" d="M990 1618 C1165 1490 1165 750 800 749"></path>
+
+      <rect class="node red" x="70" y="1625" width="280" height="92" rx="12"></rect>
+      <text class="label" x="210" y="1657" text-anchor="middle">Wait / Resume / Failed</text>
+      <text class="small" x="210" y="1683" text-anchor="middle">暂停、从健康检查点继续或终止</text>
+      <path class="danger-arrow" d="M455 1670 H350"></path>
+      <path class="soft-arrow" d="M210 1625 C40 1470 40 749 400 749"></path>
+      <text class="edge-label" x="88" y="1315">仅 Resume 回到 Runtime Loop</text>
+    </svg>
+  </section>
+
+  <section class="page">
+    <div class="page-head">
+      <div>
+        <h2>02 Planner + Budget + Model Routing</h2>
+        <p class="desc">Planner 生成候选计划，Budget 在规划阶段分配资源边界，Model Routing 为步骤选择合适模型；Runtime 仍负责实际扣减和硬限制。反馈数据回到下一次规划，而不是无限增加 Step 或 Token。</p>
+      </div>
+      <div class="page-no">02 / Planning</div>
+    </div>
+    <svg class="tall-flow" viewBox="0 0 1200 1560" preserveAspectRatio="none" role="img" aria-label="planner budget and model routing vertical flow">
+      <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#475569"></path></marker><marker id="arrow-red" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#b91c1c"></path></marker></defs>
+
+      <rect class="lane" x="40" y="38" width="1120" height="420" rx="16"></rect>
+      <text class="lane-title" x="68" y="72">A · 任务分类与资源边界</text>
+      <rect class="node green" x="420" y="95" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="126" text-anchor="middle">TaskInput</text>
+      <text class="small" x="600" y="151" text-anchor="middle">目标、约束、文件、风险与工作区</text>
+      <rect class="node blue" x="420" y="220" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="251" text-anchor="middle">Task Classification</text>
+      <text class="small" x="600" y="276" text-anchor="middle">direct / read / write / repo / long-task</text>
+      <path class="arrow" d="M600 177 V220"></path>
+      <rect class="node purple" x="90" y="335" width="300" height="82" rx="12"></rect>
+      <text class="label" x="240" y="366" text-anchor="middle">Budget History</text>
+      <text class="small" x="240" y="391" text-anchor="middle">成功样本、p50 / p80 / p95、失败原因</text>
+      <rect class="node orange" x="450" y="335" width="300" height="82" rx="12"></rect>
+      <text class="label" x="600" y="366" text-anchor="middle">Budget Envelope</text>
+      <text class="small" x="600" y="391" text-anchor="middle">Step / Token / Time / Cost 上限</text>
+      <rect class="node slate" x="810" y="335" width="300" height="82" rx="12"></rect>
+      <text class="label" x="960" y="366" text-anchor="middle">Risk + Provider Capability</text>
+      <text class="small" x="960" y="391" text-anchor="middle">任务风险、工具需求、模型能力</text>
+      <path class="arrow" d="M600 302 V335"></path>
+      <path class="soft-arrow" d="M390 376 H450"></path>
+      <path class="soft-arrow" d="M810 376 H750"></path>
+
+      <rect class="lane" x="40" y="490" width="1120" height="660" rx="16"></rect>
+      <text class="lane-title" x="68" y="524">B · 候选计划生成、检查与编译</text>
+      <polygon class="node blue" points="600,555 740,625 600,695 460,625"></polygon>
+      <text class="label" x="600" y="618" text-anchor="middle">Planning Strategy</text>
+      <text class="small" x="600" y="642" text-anchor="middle">Fast Path / Template / LLM</text>
+      <path class="arrow" d="M600 417 V555"></path>
+      <rect class="node blue" x="420" y="745" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="776" text-anchor="middle">PlanSpec</text>
+      <text class="small" x="600" y="801" text-anchor="middle">阶段、步骤、依赖、工具、退出条件</text>
+      <path class="arrow" d="M600 695 V745"></path>
+      <rect class="node purple" x="420" y="870" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="901" text-anchor="middle">Schema + PlanLinter</text>
+      <text class="small" x="600" y="926" text-anchor="middle">结构、粒度、依赖、重复步骤检查</text>
+      <path class="arrow" d="M600 827 V870"></path>
+      <polygon class="node orange" points="600,985 735,1050 600,1115 465,1050"></polygon>
+      <text class="label" x="600" y="1043" text-anchor="middle">Budget / Policy</text>
+      <text class="small" x="600" y="1067" text-anchor="middle">计划可执行且不越界？</text>
+      <path class="arrow" d="M600 952 V985"></path>
+      <rect class="node red" x="85" y="1005" width="300" height="90" rx="12"></rect>
+      <text class="label" x="235" y="1037" text-anchor="middle">Reject / Revise Plan</text>
+      <text class="small" x="235" y="1061" text-anchor="middle">压缩、拆分、补依赖或请求用户</text>
+      <path class="danger-arrow" d="M465 1050 H385"></path>
+      <text class="edge-label" x="425" y="1037" text-anchor="middle">否</text>
+      <path class="danger-arrow" d="M235 1005 C235 900 330 790 420 786"></path>
+
+      <rect class="lane" x="40" y="1180" width="1120" height="330" rx="16"></rect>
+      <text class="lane-title" x="68" y="1214">C · Runtime 执行与反馈闭环</text>
+      <rect class="node green" x="420" y="1195" width="360" height="90" rx="12"></rect>
+      <text class="label" x="600" y="1227" text-anchor="middle">Model Routing + PlanCompiler</text>
+      <text class="small" x="600" y="1251" text-anchor="middle">Flash-first；按复杂度与风险升级</text>
+      <text class="small" x="600" y="1271" text-anchor="middle">PlanSpec → 可执行 PlanStep</text>
+      <path class="arrow" d="M600 1115 V1195"></path>
+      <text class="edge-label" x="620" y="1160">是</text>
+      <rect class="node orange" x="420" y="1340" width="360" height="90" rx="12"></rect>
+      <text class="label" x="600" y="1372" text-anchor="middle">AgentState + Runtime Budget Guard</text>
+      <text class="small" x="600" y="1396" text-anchor="middle">逐步扣减实际 Step / Token / Time</text>
+      <path class="arrow" d="M600 1285 V1340"></path>
+      <rect class="node slate" x="835" y="1335" width="270" height="100" rx="12"></rect>
+      <text class="label" x="970" y="1368" text-anchor="middle">Evaluation Feedback</text>
+      <text class="small" x="970" y="1392" text-anchor="middle">成功率、成本、粒度、Validator</text>
+      <text class="small" x="970" y="1412" text-anchor="middle">写回 Planner / Budget History</text>
+      <path class="soft-arrow" d="M780 1385 H835"></path>
+      <path class="soft-arrow" d="M970 1335 C970 1120 1125 880 1125 555 C1125 470 1030 405 960 417"></path>
+    </svg>
+  </section>
+
+  <section class="page">
+    <div class="page-head">
+      <div>
+        <h2>03 Tool Calling + Policy</h2>
+        <p class="desc">模型只能提出工具动作。Tool Boundary 先检查工具、参数和当前步骤权限，Policy 再决定允许、拒绝或人工审批；只有通过门禁后 Tool Runtime 才能产生真实副作用。</p>
+      </div>
+      <div class="page-no">03 / Tool Boundary</div>
+    </div>
+    <svg class="tall-flow" viewBox="0 0 1200 1580" preserveAspectRatio="none" role="img" aria-label="tool calling and policy vertical flow">
+      <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#475569"></path></marker><marker id="arrow-red" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#b91c1c"></path></marker></defs>
+      <rect class="lane" x="40" y="38" width="1120" height="540" rx="16"></rect>
+      <text class="lane-title" x="68" y="72">A · 模型动作进入确定性门禁</text>
+      <rect class="node purple" x="420" y="95" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="126" text-anchor="middle">ActionDecision: Tool Call</text>
+      <text class="small" x="600" y="151" text-anchor="middle">tool_name + structured arguments</text>
+      <polygon class="node blue" points="600,220 735,285 600,350 465,285"></polygon>
+      <text class="label" x="600" y="278" text-anchor="middle">Plan / Step Allows?</text>
+      <text class="small" x="600" y="302" text-anchor="middle">当前步骤可见且允许该工具？</text>
+      <path class="arrow" d="M600 177 V220"></path>
+      <rect class="node red" x="85" y="240" width="290" height="90" rx="12"></rect>
+      <text class="label" x="230" y="272" text-anchor="middle">Plan Guard Reject</text>
+      <text class="small" x="230" y="296" text-anchor="middle">修计划或重新选择动作</text>
+      <path class="danger-arrow" d="M465 285 H375"></path>
+      <polygon class="node orange" points="600,395 735,460 600,525 465,460"></polygon>
+      <text class="label" x="600" y="453" text-anchor="middle">JSON Schema Valid?</text>
+      <text class="small" x="600" y="477" text-anchor="middle">必填字段、类型、范围、枚举和额外字段</text>
+      <path class="arrow" d="M600 350 V395"></path>
+      <rect class="node red" x="825" y="415" width="290" height="90" rx="12"></rect>
+      <text class="label" x="970" y="447" text-anchor="middle">Invalid Tool Arguments</text>
+      <text class="small" x="970" y="471" text-anchor="middle">结构化问题 → 修正参数后有限重试</text>
+      <path class="danger-arrow" d="M735 460 H825"></path>
+
+      <rect class="lane" x="40" y="610" width="1120" height="500" rx="16"></rect>
+      <text class="lane-title" x="68" y="644">B · Policy 决策与人工审批</text>
+      <rect class="node orange" x="420" y="680" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="711" text-anchor="middle">Policy Evaluation</text>
+      <text class="small" x="600" y="736" text-anchor="middle">工具、路径、命令、敏感性与副作用</text>
+      <path class="arrow" d="M600 525 V680"></path>
+      <polygon class="node purple" points="600,805 745,875 600,945 455,875"></polygon>
+      <text class="label" x="600" y="868" text-anchor="middle">Allow / Deny / Approval</text>
+      <text class="small" x="600" y="892" text-anchor="middle">确定性策略输出</text>
+      <path class="arrow" d="M600 762 V805"></path>
+      <rect class="node red" x="85" y="830" width="285" height="90" rx="12"></rect>
+      <text class="label" x="227" y="862" text-anchor="middle">Deny</text>
+      <text class="small" x="227" y="886" text-anchor="middle">记录原因并阻止副作用</text>
+      <path class="danger-arrow" d="M455 875 H370"></path>
+      <rect class="node orange" x="830" y="830" width="285" height="90" rx="12"></rect>
+      <text class="label" x="972" y="862" text-anchor="middle">Human Approval</text>
+      <text class="small" x="972" y="886" text-anchor="middle">Wait User → 同意或拒绝</text>
+      <path class="arrow" d="M745 875 H830"></path>
+      <path class="soft-arrow" d="M972 920 C972 1030 760 1035 700 945"></path>
+
+      <rect class="lane" x="40" y="1140" width="1120" height="390" rx="16"></rect>
+      <text class="lane-title" x="68" y="1174">C · 真实执行、证据与故障分流</text>
+      <rect class="node green" x="420" y="1205" width="360" height="86" rx="12"></rect>
+      <text class="label" x="600" y="1237" text-anchor="middle">Tool Runtime Execute</text>
+      <text class="small" x="600" y="1262" text-anchor="middle">文件 / 命令 / Git / 外部服务</text>
+      <path class="arrow" d="M600 945 V1205"></path>
+      <rect class="node blue" x="420" y="1335" width="360" height="86" rx="12"></rect>
+      <text class="label" x="600" y="1367" text-anchor="middle">ToolResult</text>
+      <text class="small" x="600" y="1392" text-anchor="middle">success / output / error / side-effect evidence</text>
+      <path class="arrow" d="M600 1291 V1335"></path>
+      <rect class="node slate" x="85" y="1330" width="285" height="96" rx="12"></rect>
+      <text class="label" x="227" y="1362" text-anchor="middle">Failure Decision</text>
+      <text class="small" x="227" y="1386" text-anchor="middle">有限 Retry / Repair / Replan</text>
+      <text class="small" x="227" y="1406" text-anchor="middle">避免重复副作用</text>
+      <path class="danger-arrow" d="M420 1378 H370"></path>
+      <rect class="node green" x="830" y="1330" width="285" height="96" rx="12"></rect>
+      <text class="label" x="972" y="1362" text-anchor="middle">State + Evidence Update</text>
+      <text class="small" x="972" y="1386" text-anchor="middle">Manifest / Audit / Checkpoint</text>
+      <text class="small" x="972" y="1406" text-anchor="middle">交给 Validator 验收</text>
+      <path class="arrow" d="M780 1378 H830"></path>
+    </svg>
+  </section>
+
+  <section class="page">
+    <div class="page-head">
+      <div>
+        <h2>04 Validator + Finish Guard</h2>
+        <p class="desc">Validator 执行具体检查，Finish Guard 根据检查结果决定能否结束。模型只能请求 Finish，不能凭一句“已完成”把任务直接标记为 completed。</p>
+      </div>
+      <div class="page-no">04 / Completion</div>
+    </div>
+    <svg class="tall-flow" viewBox="0 0 1200 1500" preserveAspectRatio="none" role="img" aria-label="validator and finish guard vertical flow">
+      <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#475569"></path></marker><marker id="arrow-red" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#b91c1c"></path></marker></defs>
+      <rect class="lane" x="40" y="38" width="1120" height="470" rx="16"></rect>
+      <text class="lane-title" x="68" y="72">A · 建立验收依据</text>
+      <rect class="node purple" x="420" y="95" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="126" text-anchor="middle">Model Requests Finish</text>
+      <text class="small" x="600" y="151" text-anchor="middle">或当前 PlanStep 声明完成</text>
+      <rect class="node blue" x="90" y="235" width="300" height="92" rx="12"></rect>
+      <text class="label" x="240" y="267" text-anchor="middle">Expected</text>
+      <text class="small" x="240" y="291" text-anchor="middle">Exit Criteria + Output Manifest</text>
+      <rect class="node green" x="450" y="235" width="300" height="92" rx="12"></rect>
+      <text class="label" x="600" y="267" text-anchor="middle">Observed</text>
+      <text class="small" x="600" y="291" text-anchor="middle">ToolResult + Files + Evidence</text>
+      <rect class="node slate" x="810" y="235" width="300" height="92" rx="12"></rect>
+      <text class="label" x="960" y="267" text-anchor="middle">Provenance</text>
+      <text class="small" x="960" y="291" text-anchor="middle">Source Manifest + Audit References</text>
+      <path class="arrow" d="M600 177 V235"></path>
+      <path class="soft-arrow" d="M390 281 H450"></path>
+      <path class="soft-arrow" d="M810 281 H750"></path>
+      <rect class="node orange" x="420" y="380" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="411" text-anchor="middle">Build Validation Request</text>
+      <text class="small" x="600" y="436" text-anchor="middle">把“应该有”与“实际有”进行对比</text>
+      <path class="arrow" d="M600 327 V380"></path>
+
+      <rect class="lane" x="40" y="540" width="1120" height="500" rx="16"></rect>
+      <text class="lane-title" x="68" y="574">B · 程序化 Validator Layer</text>
+      <rect class="node blue" x="420" y="615" width="360" height="108" rx="12"></rect>
+      <text class="label" x="600" y="647" text-anchor="middle">Validators</text>
+      <text class="small" x="600" y="672" text-anchor="middle">文件存在 / 非空 / UTF-8 / JSON Schema</text>
+      <text class="small" x="600" y="694" text-anchor="middle">来源覆盖 / 输出完整 / 证据支持</text>
+      <path class="arrow" d="M600 462 V615"></path>
+      <rect class="node purple" x="420" y="770" width="360" height="92" rx="12"></rect>
+      <text class="label" x="600" y="802" text-anchor="middle">ValidationReport</text>
+      <text class="small" x="600" y="826" text-anchor="middle">pass / warning / blocking issue + repair hint</text>
+      <path class="arrow" d="M600 723 V770"></path>
+      <polygon class="node orange" points="600,905 745,975 600,1045 455,975"></polygon>
+      <text class="label" x="600" y="968" text-anchor="middle">Blocking Issue?</text>
+      <text class="small" x="600" y="992" text-anchor="middle">是否违反退出条件？</text>
+      <path class="arrow" d="M600 862 V905"></path>
+
+      <rect class="lane" x="40" y="1075" width="1120" height="375" rx="16"></rect>
+      <text class="lane-title" x="68" y="1109">C · Finish Guard 最终状态门禁</text>
+      <rect class="node red" x="85" y="1150" width="310" height="100" rx="12"></rect>
+      <text class="label" x="240" y="1182" text-anchor="middle">Reject Finish</text>
+      <text class="small" x="240" y="1206" text-anchor="middle">插入 Repair Step / 重新开放工具</text>
+      <text class="small" x="240" y="1226" text-anchor="middle">必要时 Replan 或 Wait User</text>
+      <path class="danger-arrow" d="M455 975 C340 1000 280 1080 240 1150"></path>
+      <text class="edge-label" x="390" y="1010">是</text>
+      <path class="danger-arrow" d="M240 1150 C210 920 305 690 420 669"></path>
+      <rect class="node green" x="445" y="1150" width="310" height="100" rx="12"></rect>
+      <text class="label" x="600" y="1182" text-anchor="middle">Allow Completed</text>
+      <text class="small" x="600" y="1206" text-anchor="middle">Validator 证据满足退出标准</text>
+      <text class="small" x="600" y="1226" text-anchor="middle">Runtime 才能提交最终状态</text>
+      <path class="arrow" d="M600 1045 V1150"></path>
+      <text class="edge-label" x="620" y="1105">否</text>
+      <rect class="node slate" x="805" y="1150" width="310" height="100" rx="12"></rect>
+      <text class="label" x="960" y="1182" text-anchor="middle">Warnings Preserved</text>
+      <text class="small" x="960" y="1206" text-anchor="middle">非阻断限制写入最终结果</text>
+      <text class="small" x="960" y="1226" text-anchor="middle">供人工复核与 Evaluation</text>
+      <path class="soft-arrow" d="M755 1200 H805"></path>
+      <rect class="node green" x="420" y="1320" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="1351" text-anchor="middle">Final Answer + Verified Outputs</text>
+      <text class="small" x="600" y="1376" text-anchor="middle">完成状态、文件、证据与限制</text>
+      <path class="arrow" d="M600 1250 V1320"></path>
+    </svg>
+  </section>
+
+  <section class="page">
+    <div class="page-head">
+      <div>
+        <h2>05 Checkpoint + Resume + Error Recovery</h2>
+        <p class="desc">Checkpoint 保存可恢复事实，Resume Health Check 判断旧状态是否仍可用，Error Recovery 根据错误类型、已有副作用和剩余计划选择有限重试、修复、重规划、等待用户或失败。</p>
+      </div>
+      <div class="page-no">05 / Recovery</div>
+    </div>
+    <svg class="tall-flow" viewBox="0 0 1200 1660" preserveAspectRatio="none" role="img" aria-label="checkpoint resume and error recovery vertical flow">
+      <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#475569"></path></marker><marker id="arrow-red" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#b91c1c"></path></marker></defs>
+      <rect class="lane" x="40" y="38" width="1120" height="440" rx="16"></rect>
+      <text class="lane-title" x="68" y="72">A · 正常运行时持续保存恢复点</text>
+      <rect class="node green" x="420" y="95" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="126" text-anchor="middle">Runtime Safe Boundary</text>
+      <text class="small" x="600" y="151" text-anchor="middle">工具返回后 / Step 切换前 / 事件处理后</text>
+      <rect class="node blue" x="420" y="225" width="360" height="110" rx="12"></rect>
+      <text class="label" x="600" y="257" text-anchor="middle">Checkpoint Snapshot</text>
+      <text class="small" x="600" y="282" text-anchor="middle">Task + AgentState + Plan + Budget</text>
+      <text class="small" x="600" y="304" text-anchor="middle">Manifest + Event Cursor + Tool Evidence</text>
+      <path class="arrow" d="M600 177 V225"></path>
+      <rect class="node slate" x="420" y="380" width="360" height="72" rx="12"></rect>
+      <text class="label" x="600" y="410" text-anchor="middle">Atomic Persist</text>
+      <text class="small" x="600" y="433" text-anchor="middle">写入可回放的本地状态</text>
+      <path class="arrow" d="M600 335 V380"></path>
+
+      <rect class="lane" x="40" y="510" width="1120" height="560" rx="16"></rect>
+      <text class="lane-title" x="68" y="544">B · 中断、重启或恢复请求</text>
+      <rect class="node red" x="420" y="575" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="606" text-anchor="middle">Error / Restart / Resume Request</text>
+      <text class="small" x="600" y="631" text-anchor="middle">运行异常、进程退出、用户继续任务</text>
+      <path class="soft-arrow" d="M600 452 V575"></path>
+      <rect class="node orange" x="420" y="705" width="360" height="110" rx="12"></rect>
+      <text class="label" x="600" y="737" text-anchor="middle">Resume Health Check</text>
+      <text class="small" x="600" y="762" text-anchor="middle">文件可读、Schema、Workspace、Task 一致</text>
+      <text class="small" x="600" y="784" text-anchor="middle">Checkpoint 新鲜度与依赖是否仍存在</text>
+      <path class="arrow" d="M600 657 V705"></path>
+      <polygon class="node purple" points="600,860 745,930 600,1000 455,930"></polygon>
+      <text class="label" x="600" y="923" text-anchor="middle">Checkpoint Healthy?</text>
+      <text class="small" x="600" y="947" text-anchor="middle">是否可以安全恢复？</text>
+      <path class="arrow" d="M600 815 V860"></path>
+      <rect class="node red" x="80" y="885" width="300" height="100" rx="12"></rect>
+      <text class="label" x="230" y="917" text-anchor="middle">Reject Resume</text>
+      <text class="small" x="230" y="941" text-anchor="middle">说明失效原因</text>
+      <text class="small" x="230" y="961" text-anchor="middle">新任务 / Wait User / Failed</text>
+      <path class="danger-arrow" d="M455 930 H380"></path>
+      <rect class="node green" x="820" y="885" width="300" height="100" rx="12"></rect>
+      <text class="label" x="970" y="917" text-anchor="middle">Restore State</text>
+      <text class="small" x="970" y="941" text-anchor="middle">恢复步骤、预算、Cursor 与证据</text>
+      <text class="small" x="970" y="961" text-anchor="middle">跳过已完成且幂等的动作</text>
+      <path class="arrow" d="M745 930 H820"></path>
+
+      <rect class="lane" x="40" y="1100" width="1120" height="510" rx="16"></rect>
+      <text class="lane-title" x="68" y="1134">C · 错误分类与恢复决策</text>
+      <rect class="node orange" x="420" y="1170" width="360" height="92" rx="12"></rect>
+      <text class="label" x="600" y="1202" text-anchor="middle">Recovery Classifier</text>
+      <text class="small" x="600" y="1226" text-anchor="middle">错误类型 + 副作用 + 当前计划 + 剩余预算</text>
+      <path class="arrow" d="M970 985 C970 1090 760 1125 680 1170"></path>
+      <polygon class="node blue" points="600,1305 750,1375 600,1445 450,1375"></polygon>
+      <text class="label" x="600" y="1368" text-anchor="middle">Recovery Action</text>
+      <text class="small" x="600" y="1392" text-anchor="middle">Retry / Repair / Replan / Wait / Fail</text>
+      <path class="arrow" d="M600 1262 V1305"></path>
+      <rect class="node green" x="820" y="1330" width="300" height="96" rx="12"></rect>
+      <text class="label" x="970" y="1362" text-anchor="middle">Continue Runtime</text>
+      <text class="small" x="970" y="1386" text-anchor="middle">从恢复步骤继续，不从头重跑</text>
+      <text class="small" x="970" y="1406" text-anchor="middle">保存新的 Checkpoint</text>
+      <path class="arrow" d="M750 1375 H820"></path>
+      <rect class="node red" x="80" y="1330" width="300" height="96" rx="12"></rect>
+      <text class="label" x="230" y="1362" text-anchor="middle">Stop Safely</text>
+      <text class="small" x="230" y="1386" text-anchor="middle">Wait User 或 Failed</text>
+      <text class="small" x="230" y="1406" text-anchor="middle">保留 Log、Audit 与阶段成果</text>
+      <path class="danger-arrow" d="M450 1375 H380"></path>
+      <path class="soft-arrow" d="M970 1426 C970 1540 760 1570 600 1515 C440 1460 330 1250 420 1216"></path>
+    </svg>
+  </section>
+
+  <section class="page">
+    <div class="page-head">
+      <div>
+        <h2>06 Dynamic Context + Memory</h2>
+        <p class="desc">Dynamic Context Loading（动态上下文加载）按当前任务和步骤选择 ContextSegment，并在 Token 预算内做过滤、压缩和溯源；Memory 只是候选来源之一，不会把全部历史直接塞进 Prompt。</p>
+      </div>
+      <div class="page-no">06 / Context</div>
+    </div>
+    <svg class="tall-flow" viewBox="0 0 1200 1660" preserveAspectRatio="none" role="img" aria-label="dynamic context and memory vertical flow">
+      <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#475569"></path></marker><marker id="arrow-red" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#b91c1c"></path></marker></defs>
+      <rect class="lane" x="40" y="38" width="1120" height="500" rx="16"></rect>
+      <text class="lane-title" x="68" y="72">A · 收集候选上下文</text>
+      <rect class="node green" x="420" y="95" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="126" text-anchor="middle">Current Task + PlanStep</text>
+      <text class="small" x="600" y="151" text-anchor="middle">当前目标决定这一次真正需要什么</text>
+      <rect class="node blue" x="70" y="245" width="240" height="96" rx="12"></rect>
+      <text class="label" x="190" y="277" text-anchor="middle">Task Sources</text>
+      <text class="small" x="190" y="301" text-anchor="middle">输入、文件、工具结果</text>
+      <rect class="node purple" x="360" y="245" width="240" height="96" rx="12"></rect>
+      <text class="label" x="480" y="277" text-anchor="middle">Session + State</text>
+      <text class="small" x="480" y="301" text-anchor="middle">摘要、计划、错误、约束</text>
+      <rect class="node orange" x="650" y="245" width="240" height="96" rx="12"></rect>
+      <text class="label" x="770" y="277" text-anchor="middle">Memory / Retrieval</text>
+      <text class="small" x="770" y="301" text-anchor="middle">任务记忆、Graph、经验</text>
+      <rect class="node slate" x="940" y="245" width="200" height="96" rx="12"></rect>
+      <text class="label" x="1040" y="277" text-anchor="middle">Skills + Tools</text>
+      <text class="small" x="1040" y="301" text-anchor="middle">可见能力与说明</text>
+      <path class="soft-arrow" d="M600 177 C560 210 330 220 190 245"></path>
+      <path class="soft-arrow" d="M600 177 C570 220 510 225 480 245"></path>
+      <path class="soft-arrow" d="M600 177 C630 220 740 225 770 245"></path>
+      <path class="soft-arrow" d="M600 177 C720 210 940 220 1040 245"></path>
+      <rect class="node blue" x="420" y="400" width="360" height="96" rx="12"></rect>
+      <text class="label" x="600" y="432" text-anchor="middle">ContextSegment Normalize</text>
+      <text class="small" x="600" y="456" text-anchor="middle">source / scope / priority / confidence</text>
+      <text class="small" x="600" y="476" text-anchor="middle">sensitivity / provenance / token estimate</text>
+      <path class="arrow" d="M190 341 C250 385 380 405 420 430"></path>
+      <path class="arrow" d="M480 341 L550 400"></path>
+      <path class="arrow" d="M770 341 L650 400"></path>
+      <path class="arrow" d="M1040 341 C940 390 820 405 780 430"></path>
+
+      <rect class="lane" x="40" y="570" width="1120" height="630" rx="16"></rect>
+      <text class="lane-title" x="68" y="604">B · 检索、路由、污染检查与预算裁剪</text>
+      <rect class="node purple" x="420" y="640" width="360" height="96" rx="12"></rect>
+      <text class="label" x="600" y="672" text-anchor="middle">Retrieve + Route</text>
+      <text class="small" x="600" y="696" text-anchor="middle">语义相关度 + Scope + 图关系 + 新鲜度</text>
+      <text class="small" x="600" y="716" text-anchor="middle">选择当前 Step 的候选片段</text>
+      <path class="arrow" d="M600 496 V640"></path>
+      <rect class="node orange" x="420" y="790" width="360" height="108" rx="12"></rect>
+      <text class="label" x="600" y="822" text-anchor="middle">Context Pollution Report</text>
+      <text class="small" x="600" y="846" text-anchor="middle">无关、低置信、敏感、冲突、跨任务干扰</text>
+      <text class="small" x="600" y="868" text-anchor="middle">检查是否超过 Context Budget</text>
+      <path class="arrow" d="M600 736 V790"></path>
+      <polygon class="node blue" points="600,945 745,1015 600,1085 455,1015"></polygon>
+      <text class="label" x="600" y="1008" text-anchor="middle">Context Sufficient?</text>
+      <text class="small" x="600" y="1032" text-anchor="middle">相关、完整且预算内？</text>
+      <path class="arrow" d="M600 898 V945"></path>
+      <rect class="node red" x="80" y="970" width="300" height="100" rx="12"></rect>
+      <text class="label" x="230" y="1002" text-anchor="middle">Filter / Compress</text>
+      <text class="small" x="230" y="1026" text-anchor="middle">删除污染、摘要重复、保留来源</text>
+      <text class="small" x="230" y="1046" text-anchor="middle">必要时扩大检索层级</text>
+      <path class="danger-arrow" d="M455 1015 H380"></path>
+      <path class="danger-arrow" d="M230 970 C230 830 340 700 420 688"></path>
+      <rect class="node green" x="420" y="1110" width="360" height="70" rx="12"></rect>
+      <text class="label" x="600" y="1139" text-anchor="middle">ContextPack</text>
+      <text class="small" x="600" y="1162" text-anchor="middle">最小充分上下文 + 检索理由 + Provenance</text>
+      <path class="arrow" d="M600 1085 V1110"></path>
+
+      <rect class="lane" x="40" y="1230" width="1120" height="380" rx="16"></rect>
+      <text class="lane-title" x="68" y="1264">C · 模型使用与受控记忆写回</text>
+      <rect class="node purple" x="420" y="1300" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="1331" text-anchor="middle">ModelInput → LLM</text>
+      <text class="small" x="600" y="1356" text-anchor="middle">只加载本步骤需要的 ContextPack</text>
+      <path class="arrow" d="M600 1180 V1300"></path>
+      <rect class="node blue" x="420" y="1425" width="360" height="90" rx="12"></rect>
+      <text class="label" x="600" y="1457" text-anchor="middle">Result + Memory Candidate</text>
+      <text class="small" x="600" y="1481" text-anchor="middle">事实、决策、错误、经验候选</text>
+      <text class="small" x="600" y="1501" text-anchor="middle">带来源、置信度和任务范围</text>
+      <path class="arrow" d="M600 1382 V1425"></path>
+      <rect class="node green" x="840" y="1425" width="280" height="90" rx="12"></rect>
+      <text class="label" x="980" y="1457" text-anchor="middle">Validated Write-back</text>
+      <text class="small" x="980" y="1481" text-anchor="middle">规则 / 人工审核后写入 Memory</text>
+      <text class="small" x="980" y="1501" text-anchor="middle">未经验证不进入共享知识</text>
+      <path class="soft-arrow" d="M780 1470 H840"></path>
+    </svg>
+  </section>
+
+  <section class="page">
+    <div class="page-head">
+      <div>
+        <h2>07 Event Queue + Replanning</h2>
+        <p class="desc">运行中输入先标准化为事件并排队，不强行杀死正在进行的模型调用。Runtime 到达 Safe Boundary 后，把原始输入、历史补充、当前状态和阶段成果打包成 ReplanContext，再决定继续、追加、替换、暂停或稳定化。</p>
+      </div>
+      <div class="page-no">07 / Event Runtime</div>
+    </div>
+    <svg class="tall-flow" viewBox="0 0 1200 1640" preserveAspectRatio="none" role="img" aria-label="event queue and replanning vertical flow">
+      <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#475569"></path></marker><marker id="arrow-red" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#b91c1c"></path></marker></defs>
+      <rect class="lane" x="40" y="38" width="1120" height="450" rx="16"></rect>
+      <text class="lane-title" x="68" y="72">A · 多端新输入统一进入事件通道</text>
+      <rect class="node green" x="420" y="95" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="126" text-anchor="middle">Task Running</text>
+      <text class="small" x="600" y="151" text-anchor="middle">模型调用或工具步骤正在推进</text>
+      <rect class="node blue" x="80" y="235" width="290" height="94" rx="12"></rect>
+      <text class="label" x="225" y="267" text-anchor="middle">New Input Sources</text>
+      <text class="small" x="225" y="291" text-anchor="middle">用户补充 / 新文件 / 审批结果</text>
+      <text class="small" x="225" y="311" text-anchor="middle">需求变化 / 暂停 / 回滚请求</text>
+      <rect class="node orange" x="455" y="235" width="290" height="94" rx="12"></rect>
+      <text class="label" x="600" y="267" text-anchor="middle">Event Normalize + Guard</text>
+      <text class="small" x="600" y="291" text-anchor="middle">类型、优先级、来源、Task ID</text>
+      <text class="small" x="600" y="311" text-anchor="middle">敏感信息与输入上限检查</text>
+      <rect class="node purple" x="830" y="235" width="290" height="94" rx="12"></rect>
+      <text class="label" x="975" y="267" text-anchor="middle">JSONL Event Queue</text>
+      <text class="small" x="975" y="291" text-anchor="middle">append-only + pending cursor</text>
+      <text class="small" x="975" y="311" text-anchor="middle">事件可追踪、可恢复</text>
+      <path class="soft-arrow" d="M600 177 C500 210 320 220 225 235"></path>
+      <path class="arrow" d="M370 282 H455"></path>
+      <path class="arrow" d="M745 282 H830"></path>
+      <rect class="node slate" x="420" y="380" width="360" height="72" rx="12"></rect>
+      <text class="label" x="600" y="410" text-anchor="middle">Current Call Continues</text>
+      <text class="small" x="600" y="433" text-anchor="middle">不强制中断正在执行的 LLM Call</text>
+      <path class="soft-arrow" d="M600 329 V380"></path>
+
+      <rect class="lane" x="40" y="520" width="1120" height="650" rx="16"></rect>
+      <text class="lane-title" x="68" y="554">B · Safe Boundary 消费事件并形成重规划上下文</text>
+      <rect class="node orange" x="420" y="590" width="360" height="92" rx="12"></rect>
+      <text class="label" x="600" y="622" text-anchor="middle">Runtime Safe Boundary</text>
+      <text class="small" x="600" y="646" text-anchor="middle">模型调用前 / 工具前后 / Step 切换前</text>
+      <path class="arrow" d="M600 452 V590"></path>
+      <path class="soft-arrow" d="M975 329 C975 500 810 560 760 590"></path>
+      <rect class="node blue" x="420" y="730" width="360" height="108" rx="12"></rect>
+      <text class="label" x="600" y="762" text-anchor="middle">Read Pending Events</text>
+      <text class="small" x="600" y="786" text-anchor="middle">按 Cursor / Task / CreatedAt 过滤</text>
+      <text class="small" x="600" y="808" text-anchor="middle">合并优先级并评估 Interrupt</text>
+      <path class="arrow" d="M600 682 V730"></path>
+      <rect class="node purple" x="420" y="885" width="360" height="120" rx="12"></rect>
+      <text class="label" x="600" y="917" text-anchor="middle">ReplanContext</text>
+      <text class="small" x="600" y="941" text-anchor="middle">原始需求 + 历史补充输入 + 当前 AgentState</text>
+      <text class="small" x="600" y="963" text-anchor="middle">当前 Plan + 阶段成果 + 新事件 + 约束</text>
+      <text class="small" x="600" y="985" text-anchor="middle">用于语义冲突判断与计划修订</text>
+      <path class="arrow" d="M600 838 V885"></path>
+      <polygon class="node orange" points="600,1045 755,1115 600,1185 445,1115"></polygon>
+      <text class="label" x="600" y="1108" text-anchor="middle">Replanning Decision</text>
+      <text class="small" x="600" y="1132" text-anchor="middle">Continue / Append / Replace</text>
+      <path class="arrow" d="M600 1005 V1045"></path>
+
+      <rect class="lane" x="40" y="1210" width="1120" height="380" rx="16"></rect>
+      <text class="lane-title" x="68" y="1244">C · 应用 Plan Patch 并稳定继续</text>
+      <rect class="node red" x="80" y="1290" width="290" height="102" rx="12"></rect>
+      <text class="label" x="225" y="1322" text-anchor="middle">Pause / Wait User</text>
+      <text class="small" x="225" y="1346" text-anchor="middle">冲突过大、信息不足或需审批</text>
+      <text class="small" x="225" y="1366" text-anchor="middle">保存 Checkpoint 后停止推进</text>
+      <path class="danger-arrow" d="M445 1115 C330 1160 260 1215 225 1290"></path>
+      <rect class="node orange" x="455" y="1290" width="290" height="102" rx="12"></rect>
+      <text class="label" x="600" y="1322" text-anchor="middle">Apply Plan Patch</text>
+      <text class="small" x="600" y="1346" text-anchor="middle">更新 Plan、State、Cursor、Checkpoint</text>
+      <text class="small" x="600" y="1366" text-anchor="middle">保留已完成的阶段成果</text>
+      <path class="arrow" d="M600 1185 V1290"></path>
+      <rect class="node purple" x="830" y="1290" width="290" height="102" rx="12"></rect>
+      <text class="label" x="975" y="1322" text-anchor="middle">Stabilization Mode</text>
+      <text class="small" x="975" y="1346" text-anchor="middle">事件过密时暂缓继续输入</text>
+      <text class="small" x="975" y="1366" text-anchor="middle">先完成合并、验证与状态稳定</text>
+      <path class="arrow" d="M755 1115 C870 1160 940 1215 975 1290"></path>
+      <rect class="node green" x="420" y="1460" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="1491" text-anchor="middle">Resume Runtime Loop</text>
+      <text class="small" x="600" y="1516" text-anchor="middle">使用新计划继续下一安全阶段</text>
+      <path class="arrow" d="M600 1392 V1460"></path>
+      <path class="soft-arrow" d="M975 1392 C920 1430 810 1450 780 1480"></path>
+    </svg>
+  </section>
+
+  <section class="page">
+    <div class="page-head">
+      <div>
+        <h2>08 Log + Audit + Evaluation</h2>
+        <p class="desc">Log 面向系统调试与监控，Audit Trail（审计轨迹）面向业务追责与证据链，Evaluation 使用任务结果和指标判断系统是否真的变好；三者共享事件来源，但保留不同粒度和访问边界。</p>
+      </div>
+      <div class="page-no">08 / Observability</div>
+    </div>
+    <svg class="tall-flow" viewBox="0 0 1200 1550" preserveAspectRatio="none" role="img" aria-label="log audit and evaluation vertical flow">
+      <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#475569"></path></marker></defs>
+      <rect class="lane" x="40" y="38" width="1120" height="400" rx="16"></rect>
+      <text class="lane-title" x="68" y="72">A · Runtime 统一产生可观测事件</text>
+      <rect class="node green" x="420" y="95" width="360" height="82" rx="12"></rect>
+      <text class="label" x="600" y="126" text-anchor="middle">Runtime Event</text>
+      <text class="small" x="600" y="151" text-anchor="middle">Plan / Model / Tool / Policy / Validator / Recovery</text>
+      <rect class="node orange" x="420" y="225" width="360" height="92" rx="12"></rect>
+      <text class="label" x="600" y="257" text-anchor="middle">Normalize + Redact</text>
+      <text class="small" x="600" y="281" text-anchor="middle">时间、Task、Step、结果、错误、Trace ID</text>
+      <text class="small" x="600" y="301" text-anchor="middle">密钥、敏感正文与个人信息脱敏</text>
+      <path class="arrow" d="M600 177 V225"></path>
+      <rect class="node slate" x="420" y="350" width="360" height="62" rx="12"></rect>
+      <text class="label" x="600" y="388" text-anchor="middle">Route by Purpose and Retention Policy</text>
+      <path class="arrow" d="M600 317 V350"></path>
+
+      <rect class="lane" x="40" y="470" width="1120" height="500" rx="16"></rect>
+      <text class="lane-title" x="68" y="504">B · 三类记录各自回答不同问题</text>
+      <rect class="node slate" x="70" y="560" width="300" height="135" rx="12"></rect>
+      <text class="label" x="220" y="592" text-anchor="middle">Runtime Log</text>
+      <text class="small" x="220" y="616" text-anchor="middle">阶段、耗时、调用、异常、重试</text>
+      <text class="small" x="220" y="638" text-anchor="middle">回答：系统哪里坏了、为什么慢？</text>
+      <text class="small" x="220" y="660" text-anchor="middle">支持 Debug 与监控</text>
+      <rect class="node orange" x="450" y="560" width="300" height="135" rx="12"></rect>
+      <text class="label" x="600" y="592" text-anchor="middle">Audit Trail</text>
+      <text class="small" x="600" y="616" text-anchor="middle">输入 ID、决策、Policy、工具、证据</text>
+      <text class="small" x="600" y="638" text-anchor="middle">回答：谁在何时依据什么做了什么？</text>
+      <text class="small" x="600" y="660" text-anchor="middle">支持追溯、复核与责任边界</text>
+      <rect class="node purple" x="830" y="560" width="300" height="135" rx="12"></rect>
+      <text class="label" x="980" y="592" text-anchor="middle">Metrics</text>
+      <text class="small" x="980" y="616" text-anchor="middle">Success / Token / Step / Time / Recovery</text>
+      <text class="small" x="980" y="638" text-anchor="middle">回答：任务表现和成本是多少？</text>
+      <text class="small" x="980" y="660" text-anchor="middle">生成可比较的结构化指标</text>
+      <path class="arrow" d="M480 412 C420 490 290 520 220 560"></path>
+      <path class="arrow" d="M600 412 V560"></path>
+      <path class="arrow" d="M720 412 C780 490 910 520 980 560"></path>
+      <rect class="node blue" x="420" y="770" width="360" height="120" rx="12"></rect>
+      <text class="label" x="600" y="802" text-anchor="middle">Evaluation</text>
+      <text class="small" x="600" y="826" text-anchor="middle">期望结果 + Validator + Audit + Metrics</text>
+      <text class="small" x="600" y="848" text-anchor="middle">任务成功率、工具准确率、恢复率</text>
+      <text class="small" x="600" y="870" text-anchor="middle">上下文命中率、延迟与单位任务成本</text>
+      <path class="soft-arrow" d="M220 695 C300 750 400 790 420 810"></path>
+      <path class="arrow" d="M600 695 V770"></path>
+      <path class="soft-arrow" d="M980 695 C900 750 800 790 780 810"></path>
+      <rect class="node green" x="420" y="920" width="360" height="70" rx="12"></rect>
+      <text class="label" x="600" y="949" text-anchor="middle">Evaluation Report</text>
+      <text class="small" x="600" y="972" text-anchor="middle">基线对比、回归、失败分类与置信边界</text>
+      <path class="arrow" d="M600 890 V920"></path>
+
+      <rect class="lane" x="40" y="1020" width="1120" height="480" rx="16"></rect>
+      <text class="lane-title" x="68" y="1054">C · 反馈闭环与治理边界</text>
+      <polygon class="node blue" points="600,1095 745,1165 600,1235 455,1165"></polygon>
+      <text class="label" x="600" y="1158" text-anchor="middle">Regression?</text>
+      <text class="small" x="600" y="1182" text-anchor="middle">新版本是否真的更好？</text>
+      <path class="arrow" d="M600 990 V1095"></path>
+      <rect class="node red" x="80" y="1120" width="300" height="96" rx="12"></rect>
+      <text class="label" x="230" y="1152" text-anchor="middle">Block / Investigate</text>
+      <text class="small" x="230" y="1176" text-anchor="middle">查看 Log 定位技术原因</text>
+      <text class="small" x="230" y="1196" text-anchor="middle">查看 Audit 业务路径</text>
+      <path class="arrow" d="M455 1165 H380"></path>
+      <rect class="node green" x="820" y="1120" width="300" height="96" rx="12"></rect>
+      <text class="label" x="970" y="1152" text-anchor="middle">Accept Improvement</text>
+      <text class="small" x="970" y="1176" text-anchor="middle">保留成功配置和基线</text>
+      <text class="small" x="970" y="1196" text-anchor="middle">标记适用任务范围</text>
+      <path class="arrow" d="M745 1165 H820"></path>
+      <rect class="node orange" x="420" y="1310" width="360" height="100" rx="12"></rect>
+      <text class="label" x="600" y="1342" text-anchor="middle">Feedback to Runtime Design</text>
+      <text class="small" x="600" y="1366" text-anchor="middle">Planner / Budget / Model / Context / Policy</text>
+      <text class="small" x="600" y="1386" text-anchor="middle">只有可复现结果才能改变默认策略</text>
+      <path class="soft-arrow" d="M230 1216 C300 1270 430 1300 480 1310"></path>
+      <path class="arrow" d="M970 1216 C900 1270 770 1300 720 1310"></path>
+    </svg>
+  </section>
+
+  <section class="page">
+    <div class="page-head">
+      <div>
+        <h2>09 CLI / Web Shell（可选）</h2>
+        <p class="desc">CLI 和 Web Shell 是可替换的交互适配层。CLI 提供最稳定的同步入口；Web Shell 在后台运行任务，展示 Activity、Checkpoint、Event 和 Token 状态，并把运行中的补充输入写入事件队列。</p>
+      </div>
+      <div class="page-no">09 / Interface</div>
+    </div>
+    <svg class="tall-flow" viewBox="0 0 1200 1640" preserveAspectRatio="none" role="img" aria-label="CLI and Web Shell optional vertical flow">
+      <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#475569"></path></marker></defs>
+      <rect class="lane" x="40" y="38" width="1120" height="470" rx="16"></rect>
+      <text class="lane-title" x="68" y="72">A · 两种入口统一生成 TaskInput 或 Event</text>
+      <rect class="node green" x="120" y="105" width="320" height="92" rx="12"></rect>
+      <text class="label" x="280" y="137" text-anchor="middle">CLI</text>
+      <text class="small" x="280" y="161" text-anchor="middle">同步任务 / Session / Resume / 命令</text>
+      <text class="small" x="280" y="181" text-anchor="middle">等待任务结束后再次输入</text>
+      <rect class="node blue" x="760" y="105" width="320" height="92" rx="12"></rect>
+      <text class="label" x="920" y="137" text-anchor="middle">Web Shell</text>
+      <text class="small" x="920" y="161" text-anchor="middle">对话输入 / 后台线程 / 状态面板</text>
+      <text class="small" x="920" y="181" text-anchor="middle">运行中仍可提交新输入</text>
+      <rect class="node slate" x="120" y="275" width="320" height="92" rx="12"></rect>
+      <text class="label" x="280" y="307" text-anchor="middle">CLI Parser + Session Store</text>
+      <text class="small" x="280" y="331" text-anchor="middle">解析命令、恢复会话、构建 TaskInput</text>
+      <text class="small" x="280" y="351" text-anchor="middle">本地持久化轮次摘要</text>
+      <path class="arrow" d="M280 197 V275"></path>
+      <polygon class="node purple" points="920,255 1065,321 920,387 775,321"></polygon>
+      <text class="label" x="920" y="314" text-anchor="middle">Runtime Running?</text>
+      <text class="small" x="920" y="338" text-anchor="middle">当前是否已有后台任务？</text>
+      <path class="arrow" d="M920 197 V255"></path>
+      <rect class="node orange" x="470" y="405" width="260" height="72" rx="12"></rect>
+      <text class="label" x="600" y="434" text-anchor="middle">TaskInput / Event Adapter</text>
+      <text class="small" x="600" y="457" text-anchor="middle">空闲→新任务；运行中→Event</text>
+      <path class="arrow" d="M440 321 C520 350 555 370 580 405"></path>
+      <path class="arrow" d="M775 321 C700 350 650 370 620 405"></path>
+
+      <rect class="lane" x="40" y="540" width="1120" height="530" rx="16"></rect>
+      <text class="lane-title" x="68" y="574">B · 共同 Runtime 执行核心</text>
+      <rect class="node orange" x="420" y="610" width="360" height="100" rx="12"></rect>
+      <text class="label" x="600" y="642" text-anchor="middle">Adaptive Runtime</text>
+      <text class="small" x="600" y="666" text-anchor="middle">Planner · Context · Tool · Policy</text>
+      <text class="small" x="600" y="688" text-anchor="middle">Validator · Checkpoint · Audit</text>
+      <path class="arrow" d="M600 477 V610"></path>
+      <rect class="node purple" x="820" y="615" width="290" height="90" rx="12"></rect>
+      <text class="label" x="965" y="647" text-anchor="middle">Event Queue</text>
+      <text class="small" x="965" y="671" text-anchor="middle">运行中输入等待 Safe Boundary</text>
+      <text class="small" x="965" y="691" text-anchor="middle">再触发 Replanning</text>
+      <path class="soft-arrow" d="M920 387 C920 470 965 530 965 615"></path>
+      <path class="arrow" d="M820 660 H780"></path>
+      <rect class="node blue" x="420" y="765" width="360" height="92" rx="12"></rect>
+      <text class="label" x="600" y="797" text-anchor="middle">Runtime Hooks + Persistent State</text>
+      <text class="small" x="600" y="821" text-anchor="middle">Activity / Checkpoint / Event / Audit</text>
+      <text class="small" x="600" y="841" text-anchor="middle">状态事实来自 Runtime，不来自界面</text>
+      <path class="arrow" d="M600 710 V765"></path>
+      <rect class="node green" x="420" y="915" width="360" height="92" rx="12"></rect>
+      <text class="label" x="600" y="947" text-anchor="middle">RuntimeResult</text>
+      <text class="small" x="600" y="971" text-anchor="middle">Final Answer + Files + Token / Step / Time</text>
+      <text class="small" x="600" y="991" text-anchor="middle">成功、等待、失败与恢复状态</text>
+      <path class="arrow" d="M600 857 V915"></path>
+
+      <rect class="lane" x="40" y="1100" width="1120" height="490" rx="16"></rect>
+      <text class="lane-title" x="68" y="1134">C · 状态展示与最终结果回传</text>
+      <rect class="node slate" x="90" y="1180" width="300" height="102" rx="12"></rect>
+      <text class="label" x="240" y="1212" text-anchor="middle">CLI Output</text>
+      <text class="small" x="240" y="1236" text-anchor="middle">活动文本、最终结果、状态摘要</text>
+      <text class="small" x="240" y="1256" text-anchor="middle">结束后返回输入提示</text>
+      <rect class="node blue" x="450" y="1180" width="300" height="102" rx="12"></rect>
+      <text class="label" x="600" y="1212" text-anchor="middle">Web Status Polling</text>
+      <text class="small" x="600" y="1236" text-anchor="middle">约 900 ms 调用 /api/status</text>
+      <text class="small" x="600" y="1256" text-anchor="middle">展示 Event、State、Plan Patch</text>
+      <rect class="node green" x="810" y="1180" width="300" height="102" rx="12"></rect>
+      <text class="label" x="960" y="1212" text-anchor="middle">Web Conversation</text>
+      <text class="small" x="960" y="1236" text-anchor="middle">临时 Activity 自动消失</text>
+      <text class="small" x="960" y="1256" text-anchor="middle">最终结果稳定保留</text>
+      <path class="arrow" d="M520 1007 C450 1080 320 1115 240 1180"></path>
+      <path class="soft-arrow" d="M600 1007 V1180"></path>
+      <path class="arrow" d="M680 1007 C750 1080 880 1115 960 1180"></path>
+      <rect class="node orange" x="420" y="1390" width="360" height="100" rx="12"></rect>
+      <text class="label" x="600" y="1422" text-anchor="middle">Optional Interface Boundary</text>
+      <text class="small" x="600" y="1446" text-anchor="middle">Shell 可以替换或关闭，不改变执行语义</text>
+      <text class="small" x="600" y="1466" text-anchor="middle">Runtime + Checkpoint 是唯一状态真相</text>
+      <path class="soft-arrow" d="M240 1282 C320 1350 450 1380 500 1390"></path>
+      <path class="soft-arrow" d="M600 1282 V1390"></path>
+      <path class="soft-arrow" d="M960 1282 C880 1350 750 1380 700 1390"></path>
+    </svg>
+  </section>
+</body>
+</html>

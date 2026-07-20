@@ -1,0 +1,33 @@
+{
+  "name": "safe-code-editor",
+  "description": "Perform scoped code edits with search-first context gathering, patch-style changes, and verification.",
+  "when_to_use": [
+    "code",
+    "edit",
+    "fix",
+    "test",
+    "refactor",
+    "bug",
+    "patch",
+    "代码",
+    "修改",
+    "修复",
+    "测试",
+    "重构"
+  ],
+  "recommended_tools": [
+    "grep_files",
+    "read_many_files",
+    "apply_patch",
+    "compile_python",
+    "run_tests",
+    "git_diff"
+  ],
+  "risk_notes": [
+    "Inspect before editing.",
+    "Keep changes scoped.",
+    "Prefer patch edits over full file rewrites.",
+    "Run the smallest relevant verification."
+  ],
+  "output_contract": "Summarize files changed, behavior changed, and verification result."
+}

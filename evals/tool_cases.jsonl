@@ -1,0 +1,12 @@
+{"name":"list_files_root_success","tool_name":"list_files","tool_args":{"path":"."},"expected_success":true}
+{"name":"read_readme_success","tool_name":"read_file","tool_args":{"path":"README.md"},"expected_success":true}
+{"name":"read_missing_failure","tool_name":"read_file","tool_args":{"path":"missing.txt"},"expected_success":false}
+{"name":"path_escape_failure","tool_name":"read_file","tool_args":{"path":"../outside.txt"},"expected_success":false}
+{"name":"unknown_tool_failure","tool_name":"shell","tool_args":{"cmd":"dir"},"expected_success":false}
+{"name":"write_new_file_success","tool_name":"write_file","tool_args":{"path":"created.txt","content":"hello","overwrite":false},"expected_success":true}
+{"name":"edit_file_success","tool_name":"edit_file","tool_args":{"path":"README.md","old_text":"hello from eval workspace","new_text":"hello from edited eval workspace"},"expected_success":true}
+{"name":"compile_python_success","tool_name":"compile_python","tool_args":{},"expected_success":true}
+{"name":"run_tests_success","tool_name":"run_tests","tool_args":{},"expected_success":true}
+{"name":"search_context_success","tool_name":"search_context","tool_args":{"query":"runtime policy","top_k":2},"expected_success":true}
+{"name":"run_command_python_version_success","tool_name":"run_command","tool_args":{"args":["python","--version"],"cwd":".","timeout_seconds":10},"expected_success":true}
+{"name":"apply_patch_add_file_success","tool_name":"apply_patch","tool_args":{"patch":"*** Begin Patch\n*** Add File: patched.txt\n+hello\n*** End Patch"},"expected_success":true}

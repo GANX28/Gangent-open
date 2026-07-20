@@ -1,0 +1,39 @@
+﻿# Obsidian local state
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache/
+.obsidian/plugins/*/data.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+coverage/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Gangent local runtime state
+.gangent/*
+gangent/workspace/
+workspace/*
+!workspace/README.md
+output/
+docs/test-reports/
+gangent_knowledge_graph.json
+gangent_knowledge_graph_data.js
+
+# Local-only documents and generated artifacts
+private/
+personal/
+*.pdf
+
+# Python cache
+__pycache__/
+*.pyc
